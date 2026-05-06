@@ -1,0 +1,49 @@
+.landing-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: "Inter", sans-serif;
+}
+
+/* Main content */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  background: linear-gradient(135deg, #eef2f7, #dfe7f1);
+  text-align: center;
+  padding: 20px;
+}
+
+/* Logo */
+.logo-circle {
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 50%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  background-color: white;
+  padding: 12px;
+  transition: 0.3s;
+}
+
+.logo-circle:hover {
+  transform: scale(1.05);
+}
+
+/* Welcome text */
+.welcome-text {
+  font-size: 32px;
+  font-weight: 600;
+  color: #1f3a5f;
+}
+
+/* Subtitle / Beta */
+.beta-text {
+  font-size: 13px;
+  color: #888;
+  letter-spacing: 1px;
+}
