@@ -19,7 +19,7 @@ body {
   font-family: 'Inter', sans-serif;
 }
 
-/* ========== CARD – WIDE ========== */
+/* ========== CARD ========== */
 .register-box {
   margin: auto;
   width: 1000px;
@@ -34,14 +34,8 @@ body {
 }
 
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .register-box:hover {
@@ -74,16 +68,23 @@ body {
   letter-spacing: -0.3px;
 }
 
-/* ========== TWO‑COLUMN GRID FORM (no JSX changes) ========== */
+/* ========== FORM ========== */
 .register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Each row holds two field-groups side by side */
+.form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px 32px;
   position: relative;
 }
 
-/* Vertical divider between columns */
-.register-form::before {
+/* Vertical divider between the two columns */
+.form-row::before {
   content: "";
   position: absolute;
   left: 50%;
@@ -92,27 +93,27 @@ body {
   width: 1px;
   background: linear-gradient(to bottom, transparent, #cbd5e1, #cbd5e1, transparent);
   transform: translateX(-50%);
+  pointer-events: none;
 }
 
-/* Make full‑width items span both columns */
-.register-form .full-width {
-  grid-column: span 2;
+/* Each label + input lives in its own wrapper */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-/* ========== FORM FIELD STYLES ========== */
-.register-form label {
+/* ========== LABELS ========== */
+.field-group label {
   font-size: 13px;
   font-weight: 600;
   color: #1e293b;
   letter-spacing: 0.3px;
-  margin-bottom: 4px;
-  display: block;
-  text-align: left;
 }
 
-.register-form input,
-.unit-dropdown,
-.register-form select {
+/* ========== INPUTS & SELECTS ========== */
+.field-group input,
+.field-group select {
   width: 100%;
   padding: 12px 16px;
   border: 1.5px solid #e2e8f0;
@@ -122,26 +123,39 @@ body {
   background: #ffffff;
   color: #1e293b;
   transition: all 0.2s ease;
+  appearance: auto; /* keep native dropdown arrow */
 }
 
-.register-form input:focus,
-.unit-dropdown:focus,
-.register-form select:focus {
+.field-group input:focus,
+.field-group select:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
-.register-form input::placeholder {
+.field-group input::placeholder {
   color: #b9c3d0;
   font-weight: 400;
 }
 
-/* ========== BUTTON & ERROR ========== */
+.field-group select:disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* ========== ERROR ========== */
+.error-text {
+  color: #ef4444;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
+
+/* ========== BUTTON ========== */
 .register-btn {
   width: 100%;
-  margin-top: 10px;
-  padding: 12px;
+  padding: 13px;
   background: linear-gradient(90deg, #1f3a5f, #2a4b7a);
   border: none;
   border-radius: 40px;
@@ -153,22 +167,19 @@ body {
   box-shadow: 0 4px 12px rgba(31, 58, 95, 0.3);
 }
 
-.register-btn:hover {
+.register-btn:hover:not(:disabled) {
   background: linear-gradient(90deg, #162c47, #1f3a5f);
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(31, 58, 95, 0.4);
 }
 
-.register-btn:active {
+.register-btn:active:not(:disabled) {
   transform: translateY(0);
 }
 
-.error-text {
-  color: #ef4444;
-  font-size: 13px;
-  text-align: left;
-  margin-top: -8px;
-  font-weight: 500;
+.register-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 /* ========== FOOTER ========== */
@@ -183,17 +194,21 @@ body {
 
 /* ========== RESPONSIVE ========== */
 @media (max-width: 700px) {
-  .register-form {
+  .form-row {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  .register-form::before {
+
+  .form-row::before {
     display: none;
   }
+
   .register-box {
     padding: 28px 20px 36px;
   }
+
   .register-title {
     font-size: 22px;
   }
 }
+

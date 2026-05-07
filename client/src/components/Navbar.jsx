@@ -1,5 +1,5 @@
 import "./Navbar.css";
-import logo from "../assets/nalco.png"; // Uncomment if using
+import logo2 from "../assets/logo2.png"; 
 import { useNavigate, useLocation } from "react-router-dom";
 import React, { useState, useEffect, useRef } from "react";
 
@@ -42,8 +42,7 @@ export default function Navbar() {
   return (
     <div className="navbar">
       <div className="logo-section" onClick={() => navigate("/")}>
-        <img src={logo} alt="NALCO Logo" />
-        <span className="logo-text">NALCO</span>
+        <img src={logo2} alt="NALCO Logo" />
       </div>
 
       <div className="nav-buttons">

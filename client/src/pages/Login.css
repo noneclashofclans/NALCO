@@ -58,7 +58,7 @@ body {
 .login-logo-section img {
   width: 80px;
   height: 80px;
-  border-radius: 50%;
+  border-radius: 50px;
   object-fit: cover;
   box-shadow: 0 8px 20px rgba(31, 58, 95, 0.15);
   background: white;

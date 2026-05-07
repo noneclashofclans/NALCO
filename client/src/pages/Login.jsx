@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Navbar from "../components/Navbar";
-import logo from "../assets/nalco.png";
+import logo2 from "../assets/logo2.png";
 import "./Login.css";
 import toast from "react-hot-toast";
 import axios from 'axios';
@@ -67,7 +67,7 @@ const Login = () => {
 
         <div className="login-box">
             <div className="login-logo-section">
-            <img src={logo} alt="NALCO Logo" />
+                <img src={logo2} alt="NALCO Logo" />
             </div>
 
             <h2 className="login-title">Login</h2>
