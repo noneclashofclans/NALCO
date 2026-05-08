@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import "./Dashboard.css";
+import toast, { Toaster } from 'react-hot-toast';
 
 const HodDashboard = () => {
   const BASE_URL = 'http://localhost:3000';
@@ -49,7 +50,7 @@ const HodDashboard = () => {
   if (!selectedRequest) return;
   
   if (actionType === 'reject' && !remarks.trim()) {
-    alert("Remarks are mandatory when rejecting a request.");
+    toast.error("Remarks are mandatory when rejecting a request.");
     return;
   }
 
@@ -65,7 +66,7 @@ const HodDashboard = () => {
     });
     const data = await res.json();
     if (data.success) {
-      alert(`Request ${actionType}d successfully!`);
+      toast.success(`Request ${actionType}d successfully!`);
       setSelectedRequest(null);
       setRemarks("");
       fetchTeamRequests();
@@ -75,7 +76,7 @@ const HodDashboard = () => {
     }
   } catch (err) {
     console.error("Action error", err);
-    alert("Failed to process request.");
+    toast.error(data.message || "Action failed");
   }
 };
 
@@ -88,6 +89,7 @@ const HodDashboard = () => {
   return (
     <div className="dashboard-container">
       <Navbar />
+      <Toaster position="top-right" />
       <div className="dashboard-body">
         {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
         <button className="sidebar-toggle" onClick={() => setSidebarOpen((o) => !o)}>
@@ -161,8 +163,8 @@ const HodDashboard = () => {
                           <tr key={req._id}>
                             <td className="req-id">#{req.formNumber || req._id.slice(-5)}</td>
                             <td>
-                              <strong>{req.requestId?.username || "Unknown"}</strong><br/>
-                              <span style={{fontSize: '12px', color: '#64748b'}}>{req.requestId?.personalNumber}</span>
+                              <strong>{req.userId?.username || "Unknown"}</strong><br/>
+                              <span style={{fontSize: '12px', color: '#64748b'}}>{req.userId?.personalNumber}</span>
                             </td>
                             <td>{req.requestType}</td>
                             
@@ -266,7 +268,7 @@ const HodDashboard = () => {
         <div className="hod-modal-overlay">
           <div className="hod-modal">
             <h3>Review Request</h3>
-            <p><strong>Employee:</strong> {selectedRequest.requestId?.username || "Unknown"}</p>
+            <p><strong>Employee:</strong> {selectedRequest.userId?.username || "Unknown"}</p>
             <p><strong>Type:</strong> {selectedRequest.requestType}</p>
             
             {/* ADDED JUSTIFICATION TO MODAL */}

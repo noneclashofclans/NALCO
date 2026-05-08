@@ -331,4 +331,30 @@ router.get('/hods', async (req, res) => {
   }
 });
 
+router.get('/receipt/:id', async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'Invalid request ID.' });
+    }
+
+    const request = await Request
+      .findById(req.params.id)
+      .populate('userId', 'username personalNumber')
+      .populate('hodApprovedBy', 'username')
+      .populate('authorityApprovedBy', 'username')
+      .populate('networkApprovedBy', 'username');
+
+    if (!request) {
+      return res.status(404).json({ success: false, message: 'Request not found.' });
+    }
+
+    res.status(200).json({ success: true, request });
+  } catch (error) {
+    console.error('Receipt fetch error:', error);
+    res.status(500).json({ success: false, message: 'Server error fetching receipt.' });
+  }
+});
+
+
+
 module.exports = router;

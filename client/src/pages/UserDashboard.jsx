@@ -349,26 +349,29 @@ const UserDashboard = () => {
 
   /* ── Receipt generator (unchanged) ───────────────────────── */
 
-  const downloadReceipt = (request, currentUser) => {
+  const downloadReceipt = async (requestId, currentUser) => {
+  try {
+    const res = await fetch(`${BASE_URL}/api/requests/receipt/${requestId}`);
+    const data = await res.json();
+    if (!data.success) return alert("Failed to fetch receipt data.");
+
+    const request = data.request;
     const formatDate = (date) => new Date(date).toLocaleString();
     const generationTime = new Date().toLocaleString();
     const logoUrl = "https://nalcoindia.com/wp-content/themes/nalco/images/logo.png";
 
-    const receiptHtml = `
-    <!DOCTYPE html>
+    const receiptHtml = `<!DOCTYPE html>
     <html>
     <head>
       <meta charset="UTF-8">
-      <title>Approval Receipt - ${request.formNumber}</title>
       <style>
         :root { --primary-blue: #7b130a; --text-dark: #1e293b; --text-muted: #64748b; --border-color: #cbd5e1; --bg-light: #f8fafc; }
         body { font-family: 'Arial', sans-serif; margin: 0; padding: 40px; background-color: #f1f5f9; color: var(--text-dark); }
         .receipt-container { max-width: 850px; margin: 0 auto; background: #ffffff; border: 1px solid var(--border-color); padding: 40px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        .header { display: flex; align-items: center; border-bottom: 3px solid var(--primary-blue); padding-bottom: 20px; margin-bottom: 30px; }
-        .logo-container img { width: 180px; height: 50px; }
-        .header-text { flex: 1; text-align: center; padding-right: 120px; }
-        .header-text h1 { margin: 0; font-size: 22px; color: var(--primary-blue); text-transform: uppercase; }
-        .header-text h2 { margin: 6px 0 0; font-size: 16px; color: #334155; }
+        .header { display: flex; flex-direction: column; align-items: center; border-bottom: 3px solid var(--primary-blue); padding-bottom: 20px; margin-bottom: 30px; }
+        .logo-container img { width: 220px; height: 65px; object-fit: contain; }
+        .header-text { text-align: center; margin-top: 12px; }
+        .header-text h2 { margin: 0; font-size: 16px; color: #334155; }
         .section { margin-bottom: 30px; }
         .section-title { font-size: 15px; font-weight: bold; background-color: var(--primary-blue); color: white; padding: 8px 12px; margin-bottom: 16px; text-transform: uppercase; }
         .details-grid { display: grid; grid-template-columns: 1.2fr 2fr; border-top: 1px solid var(--border-color); border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color); }
@@ -383,8 +386,10 @@ const UserDashboard = () => {
         .status-pending  { background-color: #fef9c3; color: #854d0e; border: 1px solid #fef08a; }
         .signature-section { display: flex; justify-content: space-between; margin-top: 50px; }
         .signature-box { width: 30%; text-align: center; }
-        .signature-line { border-bottom: 1px solid var(--text-dark); margin-bottom: 8px; height: 40px; }
-        .signature-label { font-weight: bold; font-size: 13px; }
+        .signature-line { margin-bottom: 8px; height: 40px; display: flex; align-items: flex-end; justify-content: center; }
+        .signature-name { font-size: 13px; font-weight: bold; color: var(--text-dark); border-bottom: 1px solid var(--text-dark); padding-bottom: 4px; min-width: 80%; }
+        .signature-name-empty { border-bottom: 1px solid var(--text-dark); height: 1px; min-width: 80%; }
+        .signature-label { font-weight: bold; font-size: 13px; margin-top: 8px; }
         .signature-meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
         .footer { margin-top: 40px; text-align: center; font-size: 11px; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 15px; }
         .controls { text-align: center; margin-top: 20px; }
@@ -397,7 +402,6 @@ const UserDashboard = () => {
         <div class="header">
           <div class="logo-container"><img src="${logoUrl}" alt="NALCO Logo" onerror="this.style.display='none'" /></div>
           <div class="header-text">
-            <h1>National Aluminium Company Limited</h1>
             <h2>External Storage Media Access Approval Receipt</h2>
           </div>
         </div>
@@ -442,20 +446,48 @@ const UserDashboard = () => {
           </table>
         </div>
         <div class="signature-section">
-          <div class="signature-box"><div class="signature-line"></div><div class="signature-label">Head of Department</div><div class="signature-meta">${request.hodApprovedBy ? `Signed: ${formatDate(request.hodApprovalDate)}` : "Awaiting Signature"}</div></div>
-          <div class="signature-box"><div class="signature-line"></div><div class="signature-label">Competent Authority</div><div class="signature-meta">${request.authorityApprovedBy ? `Signed: ${formatDate(request.authorityApprovalDate)}` : "Awaiting Signature"}</div></div>
-          <div class="signature-box"><div class="signature-line"></div><div class="signature-label">Network Administrator</div><div class="signature-meta">${request.networkApprovedBy ? `Signed: ${formatDate(request.networkApprovalDate)}` : "Awaiting Signature"}</div></div>
+          <div class="signature-box">
+            <div class="signature-line">
+              ${request.hodApprovedBy?.username
+                ? `<span class="signature-name">${request.hodApprovedBy.username}</span>`
+                : `<div class="signature-name-empty"></div>`}
+            </div>
+            <div class="signature-label">Head of Department</div>
+            <div class="signature-meta">${request.hodApprovedBy ? `Signed: ${formatDate(request.hodApprovalDate)}` : "Awaiting Signature"}</div>
+          </div>
+          <div class="signature-box">
+            <div class="signature-line">
+              ${request.authorityApprovedBy?.username
+                ? `<span class="signature-name">${request.authorityApprovedBy.username}</span>`
+                : `<div class="signature-name-empty"></div>`}
+            </div>
+            <div class="signature-label">Competent Authority</div>
+            <div class="signature-meta">${request.authorityApprovedBy ? `Signed: ${formatDate(request.authorityApprovalDate)}` : "Awaiting Signature"}</div>
+          </div>
+          <div class="signature-box">
+            <div class="signature-line">
+              ${request.networkApprovedBy?.username
+                ? `<span class="signature-name">${request.networkApprovedBy.username}</span>`
+                : `<div class="signature-name-empty"></div>`}
+            </div>
+            <div class="signature-label">Network Administrator</div>
+            <div class="signature-meta">${request.networkApprovedBy ? `Signed: ${formatDate(request.networkApprovalDate)}` : "Awaiting Signature"}</div>
+          </div>
         </div>
         <div class="footer">System-Generated Document • Valid only with all 3 digital approvals. <br/>Generated on: ${generationTime}</div>
       </div>
       <div class="controls"><button class="download-btn" onclick="window.print()">🖨️ Print / Save as PDF</button></div>
     </body>
-    </html>`;
-    
+    </html>` 
+
     const win = window.open('', '_blank');
     win.document.write(receiptHtml);
     win.document.close();
-  };
+  } catch (err) {
+    console.error("Receipt error:", err);
+    alert("Failed to generate receipt.");
+  }
+};
 
 
   /* ── Render ───────────────────────────────────────────────── */
@@ -706,7 +738,7 @@ const UserDashboard = () => {
                             {req.status === 'approved' && (
                               <button
                                 className="download-receipt-btn"
-                                onClick={() => downloadReceipt(req, user)}
+                                onClick={() => downloadReceipt(req._id, user)}
                               >
                                 📄 Receipt
                               </button>
