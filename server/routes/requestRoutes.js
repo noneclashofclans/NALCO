@@ -6,6 +6,7 @@ const fs       = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const mongoose = require('mongoose');
 const Request  = require('../models/Request');
+const User = require('../models/User'); 
 
 // ── Upload directory setup ───────────────────────────────────
 
@@ -32,15 +33,13 @@ const fileFilter = (_req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 2 * 1024 * 1024, files: 1 },  // 2 MB, max 1 file
+  limits: { fileSize: 2 * 1024 * 1024, files: 1 },  
 });
 
-// ── Cleanup helper ───────────────────────────────────────────
 
 const cleanupFiles = (files = []) =>
   files.forEach((f) => fs.unlink(f.path, () => {}));
 
-// ── Multer error handler ─────────────────────────────────────
 
 const handleMulterError = (err, _req, res, next) => {
   if (err instanceof multer.MulterError) {
@@ -57,7 +56,6 @@ const handleMulterError = (err, _req, res, next) => {
   next(err);
 };
 
-// ── POST /submit ─────────────────────────────────────────────
 
 router.post(
   '/submit',
@@ -134,17 +132,14 @@ router.get('/my-requests', async (req, res) => {
   try {
     const { userId } = req.query;
 
-    // Step 1 — must be present and non-empty
     if (!userId || !userId.trim()) {
       return res.status(400).json({ success: false, message: 'User ID is required.' });
     }
 
-    // Step 2 — must be a valid 24-char hex ObjectId
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ success: false, message: 'Invalid User ID.' });
     }
 
-    // Step 3 — cast explicitly before passing to find()
     const userRequests = await Request
       .find({ userId: new mongoose.Types.ObjectId(userId) })
       .sort({ requestDate: -1 });
@@ -157,7 +152,6 @@ router.get('/my-requests', async (req, res) => {
   }
 });
 
-// ── GET /document/:storedName ────────────────────────────────
 
 router.get('/document/:storedName', (req, res) => {
   const safeName = path.basename(req.params.storedName);
@@ -171,7 +165,6 @@ router.get('/document/:storedName', (req, res) => {
   res.sendFile(filePath);
 });
 
-// ── GET /hod-pending ─────────────────────────────────────────
 
 router.get('/hod-pending', async (req, res) => {
   try {
@@ -191,7 +184,6 @@ router.get('/hod-pending', async (req, res) => {
   }
 });
 
-// ── PUT /:id/hod-action ──────────────────────────────────────
 
 router.put('/:id/hod-action', async (req, res) => {
   try {
@@ -215,7 +207,6 @@ router.put('/:id/hod-action', async (req, res) => {
   }
 });
 
-// ── GET /authority-pending ───────────────────────────────────
 
 router.get('/authority-pending', async (req, res) => {
   try {
@@ -235,7 +226,6 @@ router.get('/authority-pending', async (req, res) => {
   }
 });
 
-// ── PUT /:id/authority-action ────────────────────────────────
 
 router.put('/:id/authority-action', async (req, res) => {
   try {
@@ -259,7 +249,6 @@ router.put('/:id/authority-action', async (req, res) => {
   }
 });
 
-// ── GET /network-pending ─────────────────────────────────────
 
 router.get('/network-pending', async (req, res) => {
   try {
@@ -279,7 +268,6 @@ router.get('/network-pending', async (req, res) => {
   }
 });
 
-// ── PUT /:id/network-action ──────────────────────────────────
 
 router.put('/:id/network-action', async (req, res) => {
   try {
@@ -300,6 +288,46 @@ router.put('/:id/network-action', async (req, res) => {
   } catch (error) {
     console.error('Network Action Error:', error);
     res.status(500).json({ success: false, message: 'Server error processing Network action.' });
+  }
+});
+
+
+
+
+router.post('/special-login', (req, res) => {
+  const { role, password } = req.body;
+
+  const PASSWORDS = {
+    competant: process.env.COMPETANT_PASSWORD || 'auth@nalco2024',
+    network:   process.env.NETWORK_PASSWORD   || 'net@nalco2024',
+  };
+
+  if (!PASSWORDS[role]) return res.status(400).json({ message: 'Invalid role' });
+
+  if (password !== PASSWORDS[role]) {
+    return res.status(401).json({ message: 'Invalid password' });
+  }
+
+  res.json({ success: true, role });
+});
+
+
+router.get('/hods', async (req, res) => {
+  try {
+    const { department } = req.query;
+    const hodScales = ['E6', 'E7', 'E8', 'E9'];
+
+    const query = { scale: { $in: hodScales } };
+    if (department) query.department = department;
+
+    const hods = await User.find(query)
+      .select('username personalNumber department scale unit')
+      .sort({ scale: -1, username: 1 });
+
+    res.json({ hods });
+  } catch (err) {
+    console.error('HOD fetch error:', err);
+    res.status(500).json({ message: 'Failed to fetch HODs' });
   }
 });
 

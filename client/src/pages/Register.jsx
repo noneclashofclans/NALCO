@@ -122,21 +122,12 @@ const Register = () => {
 
   return (
     <>
-      {/* Toaster — place once, outside the form card */}
-      <Toaster
-        position="top-right"
-        gutter={10}
-        containerStyle={{ top: 20, right: 20 }}
-        toastOptions={{ style: toastStyle }}
-      />
-
+    
       <div className="register-container">
         <Navbar />
 
         <div className="register-box">
-          <div className="register-logo-section">
-            <img src={logo2} alt="NALCO Logo" />
-          </div>
+          
 
           <h2 className="register-title">Create Account</h2>
 

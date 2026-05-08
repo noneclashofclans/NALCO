@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import Navbar from "../components/Navbar";
-import logo2 from "../assets/logo2.png";
 import "./Login.css";
 import toast, { Toaster } from "react-hot-toast";
 import axios from 'axios';
@@ -23,24 +22,14 @@ const showSuccess = (msg) =>
   toast.success(msg, {
     duration: 2500,
     icon: "✦",
-    style: {
-      ...toastStyle,
-      background: "#FDFCF9",
-      color: "#1C1A15",
-      border: "1px solid #C6D9BB",
-    },
+    style: { ...toastStyle, background: "#FDFCF9", color: "#1C1A15", border: "1px solid #C6D9BB" },
     iconTheme: { primary: "#2D7A52", secondary: "#EAF3DE" },
   });
 
 const showError = (msg) =>
   toast.error(msg, {
     duration: 4000,
-    style: {
-      ...toastStyle,
-      background: "#FDFCF9",
-      color: "#1C1A15",
-      border: "1px solid #E8A49B",
-    },
+    style: { ...toastStyle, background: "#FDFCF9", color: "#1C1A15", border: "1px solid #E8A49B" },
     iconTheme: { primary: "#C0392B", secondary: "#FDECEA" },
   });
 
@@ -50,11 +39,8 @@ const Login = () => {
   const BASE_URL = 'http://localhost:3000';
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    personalNumber: '',
-    password: ''
-  });
-
+  // Regular employee login
+  const [formData, setFormData] = useState({ personalNumber: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -65,10 +51,8 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!formData.personalNumber || !formData.password) {
+    if (!formData.personalNumber || !formData.password)
       return setError('Please fill all the fields');
-    }
 
     setLoading(true);
     setError('');
@@ -76,10 +60,9 @@ const Login = () => {
     try {
       const res = await axios.post(`${BASE_URL}/api/auth/login`, formData);
       const { token, user } = res.data;
-
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
-
+      
       showSuccess("Welcome back — login successful!");
       setTimeout(() => navigate('/user-dashboard'), 1500);
     } catch (err) {
@@ -92,24 +75,15 @@ const Login = () => {
     }
   };
 
+  /* ── Render ── */
+
   return (
     <>
-      <Toaster
-        position="top-right"
-        gutter={10}
-        containerStyle={{ top: 20, right: 20 }}
-        toastOptions={{ style: toastStyle }}
-      />
-
       <div className="login-container">
         <Navbar />
 
+        {/* ── Employee Login Card ── */}
         <div className="login-box">
-
-          <div className="login-logo-section">
-            <img src={logo2} alt="NALCO Logo" />
-          </div>
-
           <h2 className="login-title">Welcome Back</h2>
 
           <div className="login-divider">
@@ -117,7 +91,6 @@ const Login = () => {
           </div>
 
           <form className="login-form" onSubmit={handleSubmit}>
-
             <div className="field-group">
               <label htmlFor="personalNumber">Personal Number</label>
               <input
@@ -153,11 +126,8 @@ const Login = () => {
                   <span className="btn-loader"></span>
                   Submitting details...
                 </span>
-              ) : (
-                "Login"
-              )}
+              ) : "Login"}
             </button>
-
           </form>
 
           <p className="login-footer">Authorized Personnel Only · NALCO</p>

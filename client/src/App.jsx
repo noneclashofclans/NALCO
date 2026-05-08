@@ -1,5 +1,5 @@
 import React from 'react'
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -9,23 +9,67 @@ import HodDashboard from './pages/HodDashboard'
 import Competant from './pages/Competant'
 import Network from './pages/Network'
 import { Toaster } from 'react-hot-toast'
+import ProtectedRoute from './components/ProtectedRoute';
 
 const App = () => {
   return (
     <div>
       <Toaster position="top-center" />
+      
       <Routes>
-        <Route path='/' element={<Landing></Landing>}></Route>
-        <Route path='/login' element={<Login></Login>}></Route>
-        <Route path='/register' element={<Register></Register>}></Route>
-        <Route path='/user-dashboard' element={<UserDashboard></UserDashboard>}></Route>
-        <Route path='/fill-form' element={<Form></Form>}></Route>
-        <Route path='/hod' element={<HodDashboard></HodDashboard>}></Route>
-        <Route path='/competant' element={<Competant></Competant>}></Route>
-        <Route path='/network' element={<Network></Network>}></Route>
+        {/* ── PUBLIC ROUTES ── */}
+        <Route path='/' element={<Landing />} />
+        <Route path='/login' element={<Login />} />
+        <Route path='/register' element={<Register />} />
+
+        {/* ── STANDARD USER ROUTES ── */}
+        <Route 
+          path='/user-dashboard' 
+          element={
+            <ProtectedRoute routeType="user">
+              <UserDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path='/fill-form' 
+          element={
+            <ProtectedRoute routeType="user">
+              <Form />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* ── HOD ROUTE ── */}
+        <Route 
+          path='/hod' 
+          element={
+            <ProtectedRoute routeType="hod">
+              <HodDashboard />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* ── SPECIAL ADMIN ROUTES (PASSWORD PROTECTED) ── */}
+        <Route 
+          path='/competant' 
+          element={
+            <ProtectedRoute routeType="competant">
+              <Competant />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path='/network' 
+          element={
+            <ProtectedRoute routeType="network">
+              <Network />
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
     </div>
   )
 }
 
-export default App
+export default App;

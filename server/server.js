@@ -12,9 +12,9 @@ app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
 const authRoutes = require('./routes/userLogin');
-const requestRoutes = require('./routes/requestRoutes');
+const userRoutes = require('./routes/requestRoutes');
 app.use('/api/auth', authRoutes);
-app.use('/api/requests', requestRoutes);
+app.use('/api/requests', userRoutes);
 
 
 app.get('/', (req, res) => {

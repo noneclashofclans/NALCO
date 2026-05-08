@@ -6,7 +6,6 @@ import "./Dashboard.css";
 /* ── Persistence helpers ──────────────────────────────────── */
 const userFromStorage = JSON.parse(localStorage.getItem("user") || "{}");
 
-// 2. Use userFromStorage instead of user
 const SNAPSHOT_KEY       = `dashboard_request_snapshot_${userFromStorage?._id || userFromStorage?.id || 'anon'}`;
 const NOTIFICATIONS_KEY  = `dashboard_notifications_${userFromStorage?._id || userFromStorage?.id || 'anon'}`;
 
@@ -23,7 +22,6 @@ const savePersistedSnapshot = (requests) => {
     localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(slim));
   } catch { }
 };
-
 
 const loadPersistedNotifications = () => {
   try {
@@ -49,11 +47,20 @@ const UserDashboard = () => {
 
   const userRef = useRef(JSON.parse(localStorage.getItem("user") || "{}"));
   const user = userRef.current;
+  const isHod = parseInt(user?.scale?.replace("E", "") || "0", 10) >= 6;
 
   const [stats, setStats] = useState({ total: 0, pending: 0, completed: 0, rejected: 0 });
   const [recentRequests, setRecentRequests] = useState([]);
   const [activeNav, setActiveNav] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Modal State for Special Admin Access
+  const [showSpecialModal, setShowSpecialModal] = useState(false);
+  const [specialTarget, setSpecialTarget] = useState(''); // 'competant' or 'network'
+  const [specialPassword, setSpecialPassword] = useState('');
+  const [specialLoading, setSpecialLoading] = useState(false);
+  const [specialError, setSpecialError] = useState('');
+
   const [workflowStatus, setWorkflowStatus] = useState({
     hod:       { pending: 0, approved: 0, rejected: 0 },
     authority: { pending: 0, approved: 0, rejected: 0 },
@@ -108,68 +115,59 @@ const UserDashboard = () => {
   /* ── Core fetch ──────────────────────────────────────────── */
 
   const fetchRequests = useCallback(async () => {
-  const userId = user?._id || user?.id;
+    const userId = user?._id || user?.id;
 
-  // Guard: if userId is missing, do NOT hit the API.
-  // An empty/undefined userId makes the backend return all documents.
-  if (!userId || typeof userId !== 'string' || !userId.trim()) {
-    console.warn('fetchRequests: no valid userId in localStorage, aborting fetch.');
-    return;
-  }
-
-  try {
-    const res = await fetch(`${BASE_URL}/api/requests/my-requests?userId=${encodeURIComponent(userId)}`);
-
-    // 400 means the server already rejected a bad userId — don't crash.
-    if (res.status === 400) {
-      const err = await res.json();
-      console.error('fetchRequests 400:', err.message);
+    if (!userId || typeof userId !== 'string' || !userId.trim()) {
       return;
     }
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    try {
+      const res = await fetch(`${BASE_URL}/api/requests/my-requests?userId=${encodeURIComponent(userId)}`);
 
-    const data = await res.json();
-    const newRequests = data.requests || [];
+      if (res.status === 400) return;
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    const baseline = isFirstFetchRef.current
-      ? loadPersistedSnapshot()
-      : prevRequestsRef.current;
-    isFirstFetchRef.current = false;
+      const data = await res.json();
+      const newRequests = data.requests || [];
 
-    if (baseline.length > 0) compareAndNotify(baseline, newRequests);
+      const baseline = isFirstFetchRef.current
+        ? loadPersistedSnapshot()
+        : prevRequestsRef.current;
+      isFirstFetchRef.current = false;
 
-    prevRequestsRef.current = newRequests;
-    savePersistedSnapshot(newRequests);
-    setRecentRequests(newRequests);
+      if (baseline.length > 0) compareAndNotify(baseline, newRequests);
 
-    setStats({
-      total:     newRequests.length,
-      pending:   newRequests.filter(r =>
-        ['pending-hod', 'pending-authority', 'pending-network'].includes(r.status)
-      ).length,
-      completed: newRequests.filter(r => r.status === 'approved').length,
-      rejected:  newRequests.filter(r => r.status === 'rejected').length,
-    });
+      prevRequestsRef.current = newRequests;
+      savePersistedSnapshot(newRequests);
+      setRecentRequests(newRequests);
 
-    const wf = {
-      hod:       { pending: 0, approved: 0, rejected: 0 },
-      authority: { pending: 0, approved: 0, rejected: 0 },
-      network:   { pending: 0, approved: 0, rejected: 0 },
-    };
-    newRequests.forEach(({ status }) => {
-      if      (status === 'pending-hod')       { wf.hod.pending++; }
-      else if (status === 'pending-authority') { wf.hod.approved++; wf.authority.pending++; }
-      else if (status === 'pending-network')   { wf.hod.approved++; wf.authority.approved++; wf.network.pending++; }
-      else if (status === 'approved')          { wf.hod.approved++; wf.authority.approved++; wf.network.approved++; }
-      else if (status === 'rejected')          { wf.hod.rejected++; }
-    });
-    setWorkflowStatus(wf);
+      setStats({
+        total:     newRequests.length,
+        pending:   newRequests.filter(r =>
+          ['pending-hod', 'pending-authority', 'pending-network'].includes(r.status)
+        ).length,
+        completed: newRequests.filter(r => r.status === 'approved').length,
+        rejected:  newRequests.filter(r => r.status === 'rejected').length,
+      });
 
-  } catch (err) {
-    console.error('Dashboard fetch error:', err);
-  }
-}, [compareAndNotify, user]);
+      const wf = {
+        hod:       { pending: 0, approved: 0, rejected: 0 },
+        authority: { pending: 0, approved: 0, rejected: 0 },
+        network:   { pending: 0, approved: 0, rejected: 0 },
+      };
+      newRequests.forEach(({ status }) => {
+        if      (status === 'pending-hod')       { wf.hod.pending++; }
+        else if (status === 'pending-authority') { wf.hod.approved++; wf.authority.pending++; }
+        else if (status === 'pending-network')   { wf.hod.approved++; wf.authority.approved++; wf.network.pending++; }
+        else if (status === 'approved')          { wf.hod.approved++; wf.authority.approved++; wf.network.approved++; }
+        else if (status === 'rejected')          { wf.hod.rejected++; }
+      });
+      setWorkflowStatus(wf);
+
+    } catch (err) {
+      console.error('Dashboard fetch error:', err);
+    }
+  }, [compareAndNotify, user]);
 
 
   useEffect(() => { fetchRequestsRef.current = fetchRequests; }, [fetchRequests]);
@@ -225,6 +223,56 @@ const UserDashboard = () => {
     if (s === 'rejected') return 'badge--red';
     return 'badge--blue';
   };
+
+  /* ── Special Login Modal Handlers ─────────────────────────── */
+
+  const openSpecialLogin = (role) => {
+    // If they already entered the password this session, just let them in!
+    if (localStorage.getItem('specialRole') === role) {
+      navigate(`/${role}`);
+      return;
+    }
+    setSpecialTarget(role);
+    setSpecialPassword('');
+    setSpecialError('');
+    setShowSpecialModal(true);
+  };
+
+  const closeSpecialModal = () => {
+    setShowSpecialModal(false);
+    setSpecialPassword('');
+    setSpecialError('');
+  };
+
+  const handleSpecialSubmit = async (e) => {
+    e.preventDefault();
+    if (!specialPassword) return setSpecialError('Password is required');
+    
+    setSpecialLoading(true);
+    setSpecialError('');
+
+    try {
+      const res = await fetch(`${BASE_URL}/api/requests/special-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: specialTarget, password: specialPassword })
+      });
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        localStorage.setItem('specialRole', data.role);
+        closeSpecialModal();
+        navigate(`/${data.role}`);
+      } else {
+        setSpecialError(data.message || 'Invalid password.');
+      }
+    } catch (err) {
+      setSpecialError('Server error. Please try again.');
+    } finally {
+      setSpecialLoading(false);
+    }
+  };
+
 
   /* ── Status Map ───────────────────────────────────────────── */
 
@@ -304,9 +352,6 @@ const UserDashboard = () => {
   const downloadReceipt = (request, currentUser) => {
     const formatDate = (date) => new Date(date).toLocaleString();
     const generationTime = new Date().toLocaleString();
-    
-    // Using NALCO's official website logo. 
-    // Note: If your app runs on an offline intranet, replace this URL with your local asset path (e.g., '/assets/nalco-logo.png')
     const logoUrl = "https://nalcoindia.com/wp-content/themes/nalco/images/logo.png";
 
     const receiptHtml = `
@@ -316,303 +361,94 @@ const UserDashboard = () => {
       <meta charset="UTF-8">
       <title>Approval Receipt - ${request.formNumber}</title>
       <style>
-        :root {
-          --primary-blue: #7b130a;
-          --text-dark: #1e293b;
-          --text-muted: #64748b;
-          --border-color: #cbd5e1;
-          --bg-light: #f8fafc;
-        }
-        body { 
-          font-family: 'Arial', 'Helvetica', sans-serif; 
-          margin: 0; 
-          padding: 40px; 
-          background-color: #f1f5f9; 
-          color: var(--text-dark); 
-        }
-        .receipt-container { 
-          max-width: 850px; 
-          margin: 0 auto; 
-          background: #ffffff; 
-          border: 1px solid var(--border-color); 
-          padding: 40px; 
-          box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
-          position: relative;
-        }
-        /* --- Header Section --- */
-        .header { 
-          display: flex; 
-          align-items: center; 
-          border-bottom: 3px solid var(--primary-blue); 
-          padding-bottom: 20px; 
-          margin-bottom: 30px; 
-        }
-        .logo-container {
-          flex: 0 0 120px;
-        }
-        .logo-container img {
-          width: 180px;
-          height: 50px;
-        }
-        .header-text { 
-          flex: 1; 
-          text-align: center; 
-          padding-right: 120px; /* Balances the flex layout */
-        }
-        .header-text h1 { 
-          margin: 0; 
-          font-size: 22px; 
-          color: var(--primary-blue); 
-          text-transform: uppercase; 
-          letter-spacing: 1px;
-        }
-        .header-text h2 { 
-          margin: 6px 0 0; 
-          font-size: 16px; 
-          color: #334155; 
-          font-weight: 500;
-        }
-        .form-no { 
-          margin-top: 12px; 
-          display: inline-block; 
-          background: var(--bg-light); 
-          border: 1px solid var(--border-color); 
-          padding: 6px 16px; 
-          font-weight: bold; 
-          color: var(--primary-blue);
-          font-family: monospace;
-          font-size: 14px;
-        }
-
-        /* --- Sections --- */
+        :root { --primary-blue: #7b130a; --text-dark: #1e293b; --text-muted: #64748b; --border-color: #cbd5e1; --bg-light: #f8fafc; }
+        body { font-family: 'Arial', sans-serif; margin: 0; padding: 40px; background-color: #f1f5f9; color: var(--text-dark); }
+        .receipt-container { max-width: 850px; margin: 0 auto; background: #ffffff; border: 1px solid var(--border-color); padding: 40px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .header { display: flex; align-items: center; border-bottom: 3px solid var(--primary-blue); padding-bottom: 20px; margin-bottom: 30px; }
+        .logo-container img { width: 180px; height: 50px; }
+        .header-text { flex: 1; text-align: center; padding-right: 120px; }
+        .header-text h1 { margin: 0; font-size: 22px; color: var(--primary-blue); text-transform: uppercase; }
+        .header-text h2 { margin: 6px 0 0; font-size: 16px; color: #334155; }
         .section { margin-bottom: 30px; }
-        .section-title { 
-          font-size: 15px; 
-          font-weight: bold; 
-          background-color: var(--primary-blue); 
-          color: white; 
-          padding: 8px 12px; 
-          margin-bottom: 16px; 
-          text-transform: uppercase;
-        }
-
-        /* --- Data Grid --- */
-        .details-grid { 
-          display: grid; 
-          grid-template-columns: 1.2fr 2fr; 
-          border-top: 1px solid var(--border-color);
-          border-left: 1px solid var(--border-color);
-          border-right: 1px solid var(--border-color);
-        }
-        .details-grid > div { 
-          padding: 10px 12px; 
-          border-bottom: 1px solid var(--border-color); 
-          font-size: 14px;
-        }
-        .details-grid > div:nth-child(odd) { 
-          background-color: var(--bg-light); 
-          font-weight: bold; 
-          color: #334155; 
-          border-right: 1px solid var(--border-color);
-        }
-
-        /* --- Workflow Table --- */
-        .workflow-table { 
-          width: 100%; 
-          border-collapse: collapse; 
-          font-size: 14px; 
-        }
-        .workflow-table th, .workflow-table td { 
-          border: 1px solid var(--border-color); 
-          padding: 10px 12px; 
-          text-align: left; 
-        }
-        .workflow-table th { 
-          background-color: var(--bg-light); 
-          color: #334155; 
-        }
-        .status-badge { 
-          font-weight: bold; 
-          padding: 4px 8px; 
-          border-radius: 4px; 
-          font-size: 12px;
-          display: inline-block;
-        }
+        .section-title { font-size: 15px; font-weight: bold; background-color: var(--primary-blue); color: white; padding: 8px 12px; margin-bottom: 16px; text-transform: uppercase; }
+        .details-grid { display: grid; grid-template-columns: 1.2fr 2fr; border-top: 1px solid var(--border-color); border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color); }
+        .details-grid > div { padding: 10px 12px; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+        .details-grid > div:nth-child(odd) { background-color: var(--bg-light); font-weight: bold; }
+        .workflow-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .workflow-table th, .workflow-table td { border: 1px solid var(--border-color); padding: 10px 12px; text-align: left; }
+        .workflow-table th { background-color: var(--bg-light); }
+        .status-badge { font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 12px; display: inline-block; }
         .status-approved { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
         .status-rejected { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
         .status-pending  { background-color: #fef9c3; color: #854d0e; border: 1px solid #fef08a; }
-
-        /* --- Signatures --- */
-        .signature-section { 
-          display: flex; 
-          justify-content: space-between; 
-          margin-top: 50px; 
-        }
-        .signature-box { 
-          width: 30%; 
-          text-align: center; 
-        }
-        .signature-line { 
-          border-bottom: 1px solid var(--text-dark); 
-          margin-bottom: 8px; 
-          height: 40px; 
-        }
-        .signature-label { 
-          font-weight: bold; 
-          font-size: 13px; 
-          color: #334155; 
-        }
-        .signature-meta { 
-          font-size: 11px; 
-          color: var(--text-muted); 
-          margin-top: 4px; 
-        }
-
-        /* --- Footer --- */
-        .footer { 
-          margin-top: 40px; 
-          text-align: center; 
-          font-size: 11px; 
-          color: var(--text-muted); 
-          border-top: 1px dashed var(--border-color); 
-          padding-top: 15px; 
-        }
-
-        /* --- Controls --- */
+        .signature-section { display: flex; justify-content: space-between; margin-top: 50px; }
+        .signature-box { width: 30%; text-align: center; }
+        .signature-line { border-bottom: 1px solid var(--text-dark); margin-bottom: 8px; height: 40px; }
+        .signature-label { font-weight: bold; font-size: 13px; }
+        .signature-meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+        .footer { margin-top: 40px; text-align: center; font-size: 11px; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 15px; }
         .controls { text-align: center; margin-top: 20px; }
-        .download-btn { 
-          background-color: var(--primary-blue); 
-          color: white; 
-          border: none; 
-          padding: 10px 24px; 
-          font-size: 14px; 
-          border-radius: 6px; 
-          cursor: pointer; 
-          font-weight: bold; 
-          box-shadow: 0 4px 6px rgba(0, 51, 160, 0.2);
-        }
-        .download-btn:hover { background-color: #002277; }
-
-        @media print { 
-          body { background-color: white; padding: 0; } 
-          .receipt-container { box-shadow: none; border: none; padding: 10px; max-width: 100%; } 
-          .controls { display: none; } 
-        }
+        .download-btn { background-color: var(--primary-blue); color: white; border: none; padding: 10px 24px; font-size: 14px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        @media print { body { background-color: white; padding: 0; } .receipt-container { box-shadow: none; border: none; padding: 10px; max-width: 100%; } .controls { display: none; } }
       </style>
     </head>
     <body>
       <div class="receipt-container">
-        
         <div class="header">
-          <div class="logo-container">
-            <!-- NALCO Logo -->
-            <img src="${logoUrl}" alt="NALCO Logo" onerror="this.style.display='none'" />
-          </div>
+          <div class="logo-container"><img src="${logoUrl}" alt="NALCO Logo" onerror="this.style.display='none'" /></div>
           <div class="header-text">
             <h1>National Aluminium Company Limited</h1>
-            <h2>External Media Access Approval Receipt</h2>
-            <div class="form-no">Form No: ${request.formNumber}</div>
+            <h2>External Storage Media Access Approval Receipt</h2>
           </div>
         </div>
-
         <div class="section">
           <div class="section-title">1. Employee & Request Details</div>
           <div class="details-grid">
-            <div>Requester Name</div>
-            <div>${currentUser?.username || request.requestId?.username || "—"}</div>
-            
-            <div>Personal / Employee No.</div>
-            <div>${currentUser?.personalNumber || request.requestId?.personalNumber || "—"}</div>
-            
-            <div>Department</div>
-            <div>${request.department}</div>
-            
-            <div>Designation</div>
-            <div>${request.designation}</div>
-            
-            <div>Request Type</div>
-            <div>${request.requestType}</div>
-            
-            <div>Access Period</div>
-            <div>${request.accessFrom && request.accessTo ? new Date(request.accessFrom).toLocaleDateString() + "  to  " + new Date(request.accessTo).toLocaleDateString() : "—"}</div>
-            
-            <div>Justification</div>
-            <div>${request.justification || "—"}</div>
-            
-            <div>Date of Submission</div>
-            <div>${formatDate(request.requestDate)}</div>
+            <div>Requester Name</div><div>${currentUser?.username || request.requestId?.username || "—"}</div>
+            <div>Personal / Employee No.</div><div>${currentUser?.personalNumber || request.requestId?.personalNumber || "—"}</div>
+            <div>Department</div><div>${request.department}</div>
+            <div>Designation</div><div>${request.designation}</div>
+            <div>Request Type</div><div>${request.requestType}</div>
+            <div>Access Period</div><div>${request.accessFrom && request.accessTo ? new Date(request.accessFrom).toLocaleDateString() + "  to  " + new Date(request.accessTo).toLocaleDateString() : "—"}</div>
+            <div>Justification</div><div>${request.justification || "—"}</div>
+            <div>Date of Submission</div><div>${formatDate(request.requestDate)}</div>
           </div>
         </div>
-
         <div class="section">
           <div class="section-title">2. Approval Workflow Status</div>
           <table class="workflow-table">
             <thead>
               <tr>
-                <th style="width: 25%;">Authority</th>
-                <th style="width: 20%;">Status</th>
-                <th style="width: 55%;">Remarks</th>
+                <th style="width: 25%;">Authority</th><th style="width: 20%;">Status</th><th style="width: 55%;">Remarks</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td><strong>HOD (Stage 1)</strong></td>
-                <td>
-                  <span class="status-badge ${request.status !== 'pending-hod' ? 'status-approved' : 'status-pending'}">
-                    ${request.status !== 'pending-hod' ? '✓ APPROVED' : 'PENDING'}
-                  </span>
-                </td>
+                <td><span class="status-badge ${request.status !== 'pending-hod' ? 'status-approved' : 'status-pending'}">${request.status !== 'pending-hod' ? '✓ APPROVED' : 'PENDING'}</span></td>
                 <td>${request.hodRemarks || "—"}</td>
               </tr>
               <tr>
                 <td><strong>Competent Authority (Stage 2)</strong></td>
-                <td>
-                  <span class="status-badge ${request.status === 'pending-authority' ? 'status-pending' : (request.status === 'approved' || request.status === 'pending-network') ? 'status-approved' : 'status-pending'}">
-                    ${request.status === 'pending-authority' ? 'PENDING' : (request.status === 'approved' || request.status !== 'pending-hod') ? '✓ APPROVED' : '—'}
-                  </span>
-                </td>
+                <td><span class="status-badge ${request.status === 'pending-authority' ? 'status-pending' : (request.status === 'approved' || request.status === 'pending-network') ? 'status-approved' : 'status-pending'}">${request.status === 'pending-authority' ? 'PENDING' : (request.status === 'approved' || request.status !== 'pending-hod') ? '✓ APPROVED' : '—'}</span></td>
                 <td>${request.authorityRemarks || "—"}</td>
               </tr>
               <tr>
                 <td><strong>Network Admin (Stage 3)</strong></td>
-                <td>
-                  <span class="status-badge ${request.status === 'approved' ? 'status-approved' : 'status-pending'}">
-                    ${request.status === 'approved' ? '✓ APPROVED' : (request.status === 'pending-network' ? 'PENDING' : '—')}
-                  </span>
-                </td>
+                <td><span class="status-badge ${request.status === 'approved' ? 'status-approved' : 'status-pending'}">${request.status === 'approved' ? '✓ APPROVED' : (request.status === 'pending-network' ? 'PENDING' : '—')}</span></td>
                 <td>${request.networkRemarks || "—"}</td>
               </tr>
             </tbody>
           </table>
         </div>
-
         <div class="signature-section">
-          <div class="signature-box">
-            <div class="signature-line"></div>
-            <div class="signature-label">Head of Department</div>
-            <div class="signature-meta">${request.hodApprovedBy ? `Signed: ${formatDate(request.hodApprovalDate)}` : "Awaiting Signature"}</div>
-          </div>
-          <div class="signature-box">
-            <div class="signature-line"></div>
-            <div class="signature-label">Competent Authority</div>
-            <div class="signature-meta">${request.authorityApprovedBy ? `Signed: ${formatDate(request.authorityApprovalDate)}` : "Awaiting Signature"}</div>
-          </div>
-          <div class="signature-box">
-            <div class="signature-line"></div>
-            <div class="signature-label">Network Administrator</div>
-            <div class="signature-meta">${request.networkApprovedBy ? `Signed: ${formatDate(request.networkApprovalDate)}` : "Awaiting Signature"}</div>
-          </div>
+          <div class="signature-box"><div class="signature-line"></div><div class="signature-label">Head of Department</div><div class="signature-meta">${request.hodApprovedBy ? `Signed: ${formatDate(request.hodApprovalDate)}` : "Awaiting Signature"}</div></div>
+          <div class="signature-box"><div class="signature-line"></div><div class="signature-label">Competent Authority</div><div class="signature-meta">${request.authorityApprovedBy ? `Signed: ${formatDate(request.authorityApprovalDate)}` : "Awaiting Signature"}</div></div>
+          <div class="signature-box"><div class="signature-line"></div><div class="signature-label">Network Administrator</div><div class="signature-meta">${request.networkApprovedBy ? `Signed: ${formatDate(request.networkApprovalDate)}` : "Awaiting Signature"}</div></div>
         </div>
-
-        <div class="footer">
-          System-Generated Document • Valid only with all 3 digital approvals. <br/>
-          Generated on: ${generationTime}
-        </div>
+        <div class="footer">System-Generated Document • Valid only with all 3 digital approvals. <br/>Generated on: ${generationTime}</div>
       </div>
-      
-      <div class="controls">
-        <button class="download-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
-      </div>
+      <div class="controls"><button class="download-btn" onclick="window.print()">🖨️ Print / Save as PDF</button></div>
     </body>
     </html>`;
     
@@ -620,6 +456,7 @@ const UserDashboard = () => {
     win.document.write(receiptHtml);
     win.document.close();
   };
+
 
   /* ── Render ───────────────────────────────────────────────── */
 
@@ -645,8 +482,9 @@ const UserDashboard = () => {
 
         {/* ── Sidebar ── */}
         <aside className={`sidebar ${sidebarOpen ? "sidebar--open" : ""}`}>
-
           <div className="sidebar-scroll">
+            
+            {/* Standard User Navigation Groups */}
             {navGroups.map(group => (
               <div key={group.label} className="sidebar-group">
                 <div className="sidebar-group-label">{group.label}</div>
@@ -667,6 +505,34 @@ const UserDashboard = () => {
                 </ul>
               </div>
             ))}
+
+            {/* ── ADMIN / MANAGEMENT PORTALS SECTION ── */}
+            {/* ENTIRE GROUP NOW ONLY VISIBLE IF isHod (Scale >= E6) */}
+            {isHod && (
+              <div className="sidebar-group" style={{ marginTop: '16px' }}>
+                <div className="sidebar-group-label">Management Portals</div>
+                <ul className="sidebar-menu">
+                  
+                  <li onClick={() => navigate("/hod")} className="hod-portal-link">
+                    <span className="nav-icon">🛡️</span>
+                    <span className="nav-label">My HOD Dashboard</span>
+                  </li>
+
+                  {/* Always visible *if they are E6+*, but guarded by Password Modal */}
+                  <li onClick={() => openSpecialLogin('competant')}>
+                    <span className="nav-icon">⊕</span>
+                    <span className="nav-label">Competent Authority</span>
+                  </li>
+
+                  <li onClick={() => openSpecialLogin('network')}>
+                    <span className="nav-icon">⊙</span>
+                    <span className="nav-label">Network Admin</span>
+                  </li>
+
+                </ul>
+              </div>
+            )}
+
           </div>
         </aside>
 
@@ -779,7 +645,6 @@ const UserDashboard = () => {
                         <th>HOD Remarks</th>
                         <th>Authority Remarks</th>
                         <th>Network Remarks</th>
-                        {/* NEW COLUMN */}
                         <th>Documents</th>
                         <th>Receipt</th>
                         <th>Workflow</th>
@@ -815,7 +680,6 @@ const UserDashboard = () => {
                           <td>{req.authorityRemarks || "—"}</td>
                           <td>{req.networkRemarks || "—"}</td>
                           
-                          {/* NEW COLUMN RENDER */}
                           <td className="documents-cell">
                             {req.documents && req.documents.length > 0 ? (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -862,6 +726,79 @@ const UserDashboard = () => {
           </div>
         </main>
       </div>
+
+      {/* ── Special Login Modal ── */}
+      {showSpecialModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(30, 25, 23, 0.6)', 
+          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999
+        }} onClick={closeSpecialModal}>
+          
+          <div style={{
+            background: '#FDFAF9', padding: '28px', borderRadius: '12px', 
+            width: '90%', maxWidth: '400px', boxShadow: '0 12px 32px rgba(30, 25, 23, 0.15)',
+            borderTop: '4px solid #AE2828'
+          }} onClick={(e) => e.stopPropagation()}>
+            
+            <h3 style={{ margin: '0 0 12px 0', color: '#1E1917', fontSize: '1.25rem' }}>
+              {specialTarget === 'competant' ? 'Competent Authority' : 'Network Admin'}
+            </h3>
+            
+            <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#64748b' }}>
+              Please enter the portal password to continue.
+            </p>
+            
+            <form onSubmit={handleSpecialSubmit}>
+              <div style={{ marginBottom: '16px' }}>
+                <input 
+                  type="password" 
+                  style={{
+                    width: '100%', padding: '10px 14px', borderRadius: '8px',
+                    border: '1px solid #DDD0CE', fontSize: '14px',
+                    fontFamily: 'inherit', outline: 'none'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#AE2828'}
+                  onBlur={(e) => e.target.style.borderColor = '#DDD0CE'}
+                  placeholder="Enter password..."
+                  value={specialPassword}
+                  onChange={e => { setSpecialPassword(e.target.value); setSpecialError(''); }}
+                  autoFocus
+                />
+                {specialError && (
+                  <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '6px', marginBottom: 0 }}>
+                    ⚠ {specialError}
+                  </p>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '24px' }}>
+                <button 
+                  type="button" 
+                  onClick={closeSpecialModal}
+                  style={{
+                    background: '#F5F0EF', border: '1px solid #DDD0CE', color: '#1E1917',
+                    padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={specialLoading}
+                  style={{
+                    background: '#AE2828', border: 'none', color: '#FFFFFF',
+                    padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
+                    opacity: specialLoading ? 0.7 : 1
+                  }}
+                >
+                  {specialLoading ? 'Verifying...' : 'Access Portal'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
