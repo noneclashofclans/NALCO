@@ -1,6 +1,6 @@
 import React from 'react'
 import Navbar from '../components/Navbar'
-import logo from '../assets/nalco.png'
+import logo from '../assets/logo4.png'
 import './Landing.css'
 
 const Landing = () => {
@@ -12,7 +12,7 @@ const Landing = () => {
 
         <img src={logo} alt="NALCO logo" className="logo-circle" />
 
-        <h1 className="welcome-text">Welcome to NALCO <em>Hardware Control Portal</em></h1>
+        <h1 className="welcome-text">Welcome to NALCO <em>External Media Access Portal</em></h1>
 
         <p className="beta-text">Beta Version</p>
       </div>

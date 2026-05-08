@@ -1,346 +1,552 @@
+/* ============================================================
+   Navbar.css — NALCO Employee Portal
+   Light mode · Matches Register & Login design system
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap');
+
+/* ── Design Tokens (mirrored from Register/Login) ─────────── */
+
 :root {
-  /* Colors */
-  --bg-body: #f8fafc;
-  --bg-surface: rgba(255, 255, 255, 0.85);
-  --primary: #1e293b;
-  --primary-hover: #0f172a;
-  --accent: #0ea5e9;
-  --danger: #ef4444;
-  --danger-hover: #dc2626;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --border-light: #e2e8f0;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-nav: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --clr-bg:             #F4F1EB;
+  --clr-surface:        #FDFCF9;
+  --clr-surface-alt:    #F0EDE6;
+  --clr-border:         #D9D3C5;
+  --clr-border-focus:   #B5923A;
+  --clr-accent:         #B5923A;
+  --clr-accent-dark:    #8C6E27;
+  --clr-accent-light:   #F5EDD6;
+  --clr-text-primary:   #1C1A15;
+  --clr-text-secondary: #5C5649;
+  --clr-text-muted:     #9B9387;
+  --clr-error:          #C0392B;
+
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  16px;
+
+  --transition-base:   180ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --navbar-height: 64px;
 }
 
-body {
-  margin: 0;
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
-  background-color: var(--bg-body);
-  color: var(--text-main);
-  -webkit-font-smoothing: antialiased;
-}
-
+/* ── Navbar Shell ─────────────────────────────────────────── */
 
 .navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 40px;
-  background: var(--bg-surface);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border-light);
-  box-shadow: var(--shadow-nav);
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 100;
+  width: 100%;
+  background: rgba(253, 252, 249, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--clr-border);
+  font-family: 'DM Sans', sans-serif;
+  animation: navSlideDown 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+/* Thin gold accent line at the very top */
+.navbar::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--clr-accent) 0%, #D4AC5A 50%, var(--clr-accent) 100%);
+  pointer-events: none;
+}
+
+/* ── Inner Container ──────────────────────────────────────── */
+
+.navbar-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  height: var(--navbar-height);
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* ── Logo ─────────────────────────────────────────────────── */
 
 .logo-section {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   cursor: pointer;
-  transition: opacity var(--transition);
+  flex-shrink: 0;
+  gap: 0.5rem;
 }
 
 .logo-section:hover {
-  opacity: 0.85;
+  opacity: 0.82;
 }
-
-
 
 .logo-section img {
-  height: 44px; /* Slightly taller to make the text legible */
-  width: auto;  /* Allows the wide image to scale naturally */
-  max-width: 220px; /* Prevents it from dominating mobile screens */
-  object-fit: contain;  
-  border-radius: 4px; /* Optional: smooths the edges of the white background */
-  /* Note: Removed box-shadow here as it sometimes looks odd on white-background banner logos, but you can add it back if you prefer! */
+  height: 50px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  transition: transform var(--transition-bounce);
 }
 
-.logo-text {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.logo-section:hover img {
+  transform: scale(1.04);
 }
+
+/* ── Desktop Nav ──────────────────────────────────────────── */
+
+.desktop-nav {
+  display: flex;
+  align-items: center;
+}
+
+/* ── Shared Button Base ───────────────────────────────────── */
+
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  height: 38px;
+  padding: 0 1.1rem;
+  border-radius: var(--radius-md);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  white-space: nowrap;
+  overflow: hidden;
+  transition:
+    background var(--transition-base),
+    color var(--transition-base),
+    border-color var(--transition-base),
+    transform var(--transition-bounce),
+    box-shadow var(--transition-base);
+}
+
+/* Shimmer on all buttons */
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgba(255,255,255,0.22) 50%,
+    transparent 65%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.5s ease;
+  pointer-events: none;
+}
+
+.btn:hover::before {
+  transform: translateX(100%);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+/* ── Outline Button (Login) ───────────────────────────────── */
+
+.btn-outline {
+  background: transparent;
+  color: var(--clr-text-secondary);
+  border: 1.5px solid var(--clr-border);
+}
+
+.btn-outline:hover {
+  background: var(--clr-surface-alt);
+  border-color: #C4BBAA;
+  color: var(--clr-text-primary);
+  transform: translateY(-1px);
+}
+
+/* ── Primary Button (Register) ────────────────────────────── */
+
+.btn-primary {
+  background: var(--clr-accent);
+  color: #FDFCF9;
+  border: 1.5px solid transparent;
+  box-shadow: 0 1px 4px rgba(181,146,58,0.2);
+}
+
+.btn-primary:hover {
+  background: var(--clr-accent-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 16px rgba(181,146,58,0.32);
+}
+
+/* ── Nav Buttons Group ────────────────────────────────────── */
 
 .nav-buttons {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.6rem;
 }
 
-/* =========================================
-   User Section
-   ========================================= */
-.user-section {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-/* =========================================
-   Button System
-   ========================================= */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 18px;
-  border-radius: 8px;
-  border: 1px solid var(--border-light);
-  background-color: #ffffff;
-  color: var(--text-main);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all var(--transition);
-  outline: none;
-  white-space: nowrap;
-}
-
-.btn:hover {
-  background-color: #f8fafc;
-  border-color: #cbd5e1;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
-
-.btn:active {
-  transform: translateY(0);
-}
-
-.btn:focus-visible {
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3);
-  border-color: var(--accent);
-}
-
-.btn-primary {
-  background-color: var(--primary);
-  color: #ffffff;
-  border-color: var(--primary);
-}
-
-.btn-primary:hover {
-  background-color: var(--primary-hover);
-  border-color: var(--primary-hover);
-}
+/* ── Dashboard Button ─────────────────────────────────────── */
 
 .dashboard-btn {
-  background-color: var(--accent);
-  color: #ffffff;
-  border-color: var(--accent);
+  background: var(--clr-surface-alt);
+  color: var(--clr-text-secondary);
+  border: 1.5px solid var(--clr-border);
+  font-size: 0.85rem;
 }
 
 .dashboard-btn:hover {
-  background-color: #0284c7;
-  border-color: #0284c7;
+  background: var(--clr-accent-light);
+  border-color: #C8A84B;
+  color: var(--clr-accent-dark);
+  transform: translateY(-1px);
 }
 
-/* =========================================
-   User Dropdown Styles
-   ========================================= */
+/* ── Logout Button ────────────────────────────────────────── */
+
+.logout-btn {
+  width: 100%;
+  height: 36px;
+  background: transparent;
+  color: var(--clr-error);
+  border: 1.5px solid #E8A49B;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+}
+
+.logout-btn:hover {
+  background: #FDECEA;
+  border-color: var(--clr-error);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(192,57,43,0.12);
+}
+
+/* ── User Section (logged in) ─────────────────────────────── */
+
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* ── User Dropdown Wrapper ────────────────────────────────── */
+
 .user-dropdown {
   position: relative;
 }
 
+/* ── User Box (trigger) ───────────────────────────────────── */
+
 .user-box {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 12px;
-  background: #ffffff;
-  border: 1px solid var(--border-light);
-  border-radius: 40px;
+  gap: 0.5rem;
+  height: 38px;
+  padding: 0 0.75rem 0 0.5rem;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--clr-border);
+  background: var(--clr-surface);
   cursor: pointer;
-  transition: all var(--transition);
-  box-shadow: var(--shadow-sm);
+  transition:
+    background var(--transition-base),
+    border-color var(--transition-base),
+    box-shadow var(--transition-base),
+    transform var(--transition-bounce);
 }
 
 .user-box:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  background: var(--clr-accent-light);
+  border-color: #C8A84B;
   transform: translateY(-1px);
+  box-shadow: 0 3px 12px rgba(181,146,58,0.15);
 }
 
+/* ── Avatar Circle ────────────────────────────────────────── */
+
 .user-avatar {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-  color: white;
+  background: var(--clr-accent);
+  color: #FDFCF9;
+  font-size: 0.8rem;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 14px;
+  flex-shrink: 0;
+  letter-spacing: 0;
+  transition: transform var(--transition-bounce);
 }
+
+.user-box:hover .user-avatar {
+  transform: scale(1.1);
+}
+
+/* ── Username ─────────────────────────────────────────────── */
 
 .user-name {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 500;
-  color: var(--text-main);
+  color: var(--clr-text-primary);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* ── Dropdown Arrow ───────────────────────────────────────── */
+
 .dropdown-arrow {
-  font-size: 10px;
-  transition: transform var(--transition);
-  color: var(--text-muted);
+  font-size: 0.6rem;
+  color: var(--clr-text-muted);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-block;
+  line-height: 1;
+  margin-left: 2px;
 }
 
 .dropdown-arrow.rotate {
   transform: rotate(180deg);
 }
 
-/* Dropdown Menu */
+/* ── Dropdown Menu ────────────────────────────────────────── */
+
 .dropdown-menu {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: 280px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
-  border: 1px solid var(--border-light);
+  min-width: 220px;
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 4px 16px rgba(28,26,21,0.1),
+    0 1px 4px rgba(28,26,21,0.06);
   overflow: hidden;
-  animation: dropdownFadeIn 0.2s ease-out;
-  z-index: 1001;
+  animation: dropdownOpen 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: top right;
 }
 
-@keyframes dropdownFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* ── Dropdown Header ──────────────────────────────────────── */
 
 .dropdown-header {
-  padding: 16px;
-  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-  border-bottom: 1px solid var(--border-light);
+  padding: 0.75rem 1rem 0.6rem;
+  border-bottom: 1px solid var(--clr-border);
+  background: var(--clr-surface-alt);
 }
 
 .dropdown-title {
+  font-size: 0.7rem;
   font-weight: 600;
-  font-size: 14px;
-  color: var(--text-main);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--clr-text-muted);
 }
 
+/* ── Dropdown Body ────────────────────────────────────────── */
+
 .dropdown-body {
-  padding: 16px;
+  padding: 0.6rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0.35rem;
 }
 
 .dropdown-body p {
-  margin: 0;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-  color: var(--text-muted);
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.825rem;
+  line-height: 1.6;
+}
+
+.dropdown-body p span {
+  color: var(--clr-text-muted);
+  font-weight: 400;
+  flex-shrink: 0;
 }
 
 .dropdown-body p strong {
-  color: var(--text-main);
-  font-weight: 600;
+  color: var(--clr-text-primary);
+  font-weight: 500;
+  text-align: right;
+  word-break: break-word;
 }
+
+/* ── Dropdown Footer ──────────────────────────────────────── */
 
 .dropdown-footer {
-  padding: 12px 16px;
-  border-top: 1px solid var(--border-light);
-  background: #fafafa;
+  padding: 0.6rem 1rem 0.75rem;
+  border-top: 1px solid var(--clr-border);
 }
 
-.logout-btn {
-  width: 100%;
-  color: var(--danger);
-  background: transparent;
-  border: 1px solid transparent;
-  padding: 8px;
-}
+/* ── Mobile Menu Button ───────────────────────────────────── */
 
-.logout-btn:hover {
-  background-color: #fef2f2;
-  color: var(--danger-hover);
-  border-color: #fecaca;
-  transform: none;
-}
-
-/* =========================================
-   Responsive Design
-   ========================================= */
-@media (max-width: 768px) {
-  .navbar {
-    padding: 10px 16px;
-  }
-
-  .logo-text {
-    font-size: 16px;
-  }
-
- .logo-section {
-  display: flex;
+.mobile-menu-btn {
+  display: none;
   align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1.5px solid var(--clr-border);
+  border-radius: var(--radius-md);
+  background: var(--clr-surface);
   cursor: pointer;
-  transition: opacity var(--transition);
-}
-  .btn {
-    padding: 6px 14px;
-    font-size: 13px;
-  }
-
-  .user-name {
-    display: none; /* Hide username on mobile */
-  }
-
-  .user-box {
-    padding: 4px 8px;
-  }
-
-  .user-avatar {
-    width: 28px;
-    height: 28px;
-    font-size: 12px;
-  }
-
-  .dropdown-menu {
-    width: 260px;
-    right: -10px;
-  }
-
-  .dropdown-body p {
-    font-size: 12px;
-  }
+  padding: 0;
+  transition:
+    background var(--transition-base),
+    border-color var(--transition-base),
+    transform var(--transition-bounce);
 }
 
-@media (max-width: 480px) {
-  .navbar {
-    padding: 8px 12px;
+.mobile-menu-btn:hover {
+  background: var(--clr-accent-light);
+  border-color: #C8A84B;
+  transform: scale(1.05);
+}
+
+/* ── Hamburger Icon ───────────────────────────────────────── */
+
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  width: 18px;
+  height: 18px;
+}
+
+.hamburger span {
+  display: block;
+  width: 18px;
+  height: 1.5px;
+  background: var(--clr-text-secondary);
+  border-radius: 2px;
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease,
+    width 0.3s ease;
+  transform-origin: center;
+}
+
+/* Animate to X */
+.hamburger.open span:nth-child(1) {
+  transform: translateY(5.5px) rotate(45deg);
+}
+
+.hamburger.open span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.hamburger.open span:nth-child(3) {
+  transform: translateY(-5.5px) rotate(-45deg);
+}
+
+/* ── Mobile Nav Panel ─────────────────────────────────────── */
+
+.mobile-nav {
+  display: none;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0 1rem;
+  max-height: 0;
+  overflow: hidden;
+  background: var(--clr-surface);
+  border-top: 1px solid transparent;
+  transition:
+    max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    padding 0.3s ease,
+    border-color 0.2s ease;
+}
+
+.mobile-nav.open {
+  max-height: 400px;
+  padding: 1rem;
+  border-top-color: var(--clr-border);
+}
+
+.mobile-nav .btn {
+  width: 100%;
+  height: 44px;
+  font-size: 0.9rem;
+  justify-content: center;
+}
+
+/* ── Mobile User Info ─────────────────────────────────────── */
+
+.mobile-user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0;
+}
+
+.mobile-user-info .user-avatar {
+  width: 44px;
+  height: 44px;
+  font-size: 1.1rem;
+  margin-bottom: 0.1rem;
+}
+
+.mobile-user-info .user-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--clr-text-primary);
+  max-width: none;
+}
+
+.mobile-user-info .logout-btn {
+  width: 100%;
+  height: 42px;
+}
+
+/* ── Keyframes ────────────────────────────────────────────── */
+
+@keyframes navSlideDown {
+  from { opacity: 0; transform: translateY(-100%); }
+  to   { opacity: 1; transform: translateY(0);     }
+}
+
+@keyframes dropdownOpen {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ── Responsive Breakpoints ───────────────────────────────── */
+
+@media (max-width: 640px) {
+  .desktop-nav {
+    display: none;
   }
 
-  .logo-text {
-    font-size: 14px;
+  .mobile-menu-btn {
+    display: flex;
   }
 
-  .dashboard-btn {
-    display: none; /* Hide dashboard button on very small screens */
+  .mobile-nav {
+    display: flex;
   }
 
-  .btn {
-    padding: 5px 10px;
-    font-size: 12px;
+  .navbar-container {
+    padding: 0 1rem;
   }
 }

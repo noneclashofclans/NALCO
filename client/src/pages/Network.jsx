@@ -95,12 +95,8 @@ const Network = () => {
         </button>
 
         <aside className={`sidebar ${sidebarOpen ? "sidebar--open" : ""}`}>
-          <div className="sidebar-header">
-            <span className="sidebar-brand">Network Authority Panel</span>
-          </div>
           <div className="sidebar-scroll">
             <div className="sidebar-group">
-              <div className="sidebar-group-label">Network Authority Actions</div>
               <ul className="sidebar-menu">
                 {navItems.map((item) => (
                   <li
@@ -148,7 +144,16 @@ const Network = () => {
                   <div className="requests-table-wrap">
                     <table className="requests-table">
                       <thead>
-                        <tr><th>Req ID</th><th>Employee</th><th>Type</th><th>Date</th><th>Action</th></tr>
+                        <tr>
+                          <th>Req ID</th>
+                          <th>Employee</th>
+                          <th>Type</th>
+                          {/* ADDED JUSTIFICATION COLUMN */}
+                          <th>Justification</th>
+                          <th>Date</th>
+                          <th>Documents</th>
+                          <th>Action</th>
+                        </tr>
                       </thead>
                       <tbody>
                         {teamRequests.map((req) => (
@@ -159,7 +164,38 @@ const Network = () => {
                               <span style={{fontSize: '12px', color: '#64748b'}}>{req.requestId?.personalNumber}</span>
                             </td>
                             <td>{req.requestType}</td>
+                            
+                            {/* ADDED JUSTIFICATION RENDER */}
+                            <td className="justification-cell" title={req.justification || ""}>
+                              {req.justification ? (
+                                req.justification.length > 25 ? req.justification.slice(0, 25) + '...' : req.justification
+                              ) : "—"}
+                            </td>
+
                             <td>{new Date(req.requestDate).toLocaleDateString()}</td>
+                            
+                            <td className="documents-cell">
+                              {req.documents && req.documents.length > 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  {req.documents.map((doc, idx) => (
+                                    <a
+                                      key={idx}
+                                      href={`${BASE_URL}/api/requests/document/${doc.storedName}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="doc-preview-link"
+                                      title={doc.originalName}
+                                      style={{ fontSize: '12px', color: '#3b82f6', textDecoration: 'none' }}
+                                    >
+                                      📄 {doc.originalName.length > 15 ? doc.originalName.slice(0, 15) + '...' : doc.originalName}
+                                    </a>
+                                  ))}
+                                </div>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+
                             <td>
                               <button 
                                 className="primary-btn" 
@@ -187,13 +223,41 @@ const Network = () => {
                   <div className="requests-table-wrap">
                     <table className="requests-table">
                       <thead>
-                        <tr><th>ID</th><th>Type</th><th>Status</th></tr>
+                        <tr>
+                          <th>ID</th>
+                          <th>Type</th>
+                          <th>Documents</th>
+                          <th>Status</th>
+                        </tr>
                       </thead>
                       <tbody>
                         {myRequests.map((req) => (
                           <tr key={req._id}>
                             <td className="req-id">#{req.formNumber}</td>
                             <td>{req.requestType}</td>
+                            
+                            <td className="documents-cell">
+                              {req.documents && req.documents.length > 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  {req.documents.map((doc, idx) => (
+                                    <a
+                                      key={idx}
+                                      href={`${BASE_URL}/api/requests/document/${doc.storedName}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="doc-preview-link"
+                                      title={doc.originalName}
+                                      style={{ fontSize: '12px', color: '#3b82f6', textDecoration: 'none' }}
+                                    >
+                                      📄 {doc.originalName.length > 15 ? doc.originalName.slice(0, 15) + '...' : doc.originalName}
+                                    </a>
+                                  ))}
+                                </div>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+
                             <td><span className="badge badge--blue">{req.status}</span></td>
                           </tr>
                         ))}
@@ -211,8 +275,39 @@ const Network = () => {
         <div className="hod-modal-overlay">
           <div className="hod-modal">
             <h3>Final Review – Network Approval</h3>
-            <p><strong>Employee:</strong> {selectedRequest.requestId?.username}</p>
+            <p><strong>Employee:</strong> {selectedRequest.requestId?.username || "Unknown"}</p>
             <p><strong>Type:</strong> {selectedRequest.requestType}</p>
+            
+            {/* ADDED JUSTIFICATION TO MODAL */}
+            <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#64748b' }}><strong>Justification:</strong></p>
+              <p style={{ margin: 0, fontSize: '14px', color: '#0f172a', whiteSpace: 'pre-wrap' }}>
+                {selectedRequest.justification || "No justification provided."}
+              </p>
+            </div>
+
+            <div style={{ marginTop: '16px', marginBottom: '12px' }}>
+              <p style={{ margin: '0 0 8px 0', fontSize: '13px' }}><strong>Attached Documents:</strong></p>
+              {selectedRequest.documents && selectedRequest.documents.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  {selectedRequest.documents.map((doc, idx) => (
+                    <a
+                      key={idx}
+                      href={`${BASE_URL}/api/requests/document/${doc.storedName}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={doc.originalName}
+                      style={{ fontSize: '13px', color: '#3b82f6', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      📄 {doc.originalName}
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <span style={{ fontSize: '13px', color: '#64748b' }}>No documents attached.</span>
+              )}
+            </div>
+
             <div style={{ marginTop: '20px' }}>
               <label style={{ display: 'block', fontSize: '13px', marginBottom: '8px', fontWeight: '600' }}>
                 Network Authority Remarks {remarks ? '' : '(required if rejecting)'}
