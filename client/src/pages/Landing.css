@@ -105,6 +105,8 @@
   object-fit: contain;
 
   margin-bottom: 2rem;
+  border-radius: 35px;
+  border:  solid rgb(167, 0, 0);
 
   position: relative;
   z-index: 1;
