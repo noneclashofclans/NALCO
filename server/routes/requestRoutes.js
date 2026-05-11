@@ -315,6 +315,18 @@ router.get('/hods', async (req, res) => {
     const { department } = req.query;
     const hodScales = ['E6', 'E7', 'E8', 'E9'];
 
+    const designationMap = {
+      E1: "Assistant Manager",
+      E2: "Deputy Manager",
+      E3: "Manager",
+      E4: "Senior Manager",
+      E5: "Assistant General Manager",
+      E6: "Deputy General Manager",
+      E7: "General Manager",
+      E8: "Chief General Manager",
+      E9: "Executive Director",
+    };
+
     const query = { scale: { $in: hodScales } };
     if (department) query.department = department;
 
@@ -322,7 +334,12 @@ router.get('/hods', async (req, res) => {
       .select('username personalNumber department scale unit')
       .sort({ scale: -1, username: 1 });
 
-    res.json({ hods });
+    const hodsWithDesignation = hods.map(hod => ({
+      ...hod.toObject(),
+      designation: designationMap[hod.scale] || hod.scale,
+    }));
+
+    res.json({ hods: hodsWithDesignation });
   } catch (err) {
     console.error('HOD fetch error:', err);
     res.status(500).json({ message: 'Failed to fetch HODs' });

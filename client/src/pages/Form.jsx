@@ -52,14 +52,18 @@ const Form = () => {
       ? "End date cannot be before start date."
       : null;
 
-  /* ── Fetch HODs for user's department ── */
   useEffect(() => {
     const fetchHods = async () => {
       setHodsLoading(true);
       setHodsError("");
       try {
         const dept = encodeURIComponent(user?.department || "");
-        const res = await fetch(`${BASE_URL}/api/requests/hods?department=${dept}`);
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${BASE_URL}/api/requests/hods?department=${dept}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         if (!res.ok) throw new Error("Failed to load HODs");
         const data = await res.json();
         setHods(data.hods || []);
@@ -339,27 +343,27 @@ const Form = () => {
                   >
                     {selectedHod ? (
                       /* ── NEW STYLED SELECTED BOX ── */
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'space-between', 
-                        width: '100%', 
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        width: '100%',
                         background: '#FDF0F0', /* Light red tint */
                         border: '1.5px solid #E8A49B', /* Red border */
-                        padding: '12px 16px', 
+                        padding: '12px 16px',
                         borderRadius: '8px',
                         boxShadow: '0 2px 8px rgba(174, 40, 40, 0.05)'
                       }}>
                         <div className="ff-hod-selected-info" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                          <div className="ff-hod-avatar" style={{ 
-                            background: '#AE2828', 
-                            color: 'white', 
-                            width: '40px', 
-                            height: '40px', 
-                            borderRadius: '50%', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
+                          <div className="ff-hod-avatar" style={{
+                            background: '#AE2828',
+                            color: 'white',
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                             fontWeight: 'bold',
                             fontSize: '18px'
                           }}>
@@ -367,7 +371,7 @@ const Form = () => {
                           </div>
                           <div className="ff-hod-selected-text" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                             <span className="ff-hod-name" style={{ fontWeight: '700', color: '#1E1917', fontSize: '15px' }}>
-                              {selectedHod.username} <span style={{fontSize: '12px', background: '#FFFFFF', padding: '2px 6px', borderRadius: '4px', border: '1px solid #E8A49B', color: '#AE2828', marginLeft: '6px'}}>{selectedHod.scale}</span>
+                              {selectedHod.username} <span style={{ fontSize: '12px', background: '#FFFFFF', padding: '2px 6px', borderRadius: '4px', border: '1px solid #E8A49B', color: '#AE2828', marginLeft: '6px' }}>{selectedHod.scale}</span>
                             </span>
                             <span className="ff-hod-meta" style={{ fontSize: '13px', color: '#9A7070' }}>
                               {selectedHod.department} Department
@@ -377,12 +381,12 @@ const Form = () => {
                         <button
                           type="button"
                           className="ff-hod-clear"
-                          style={{ 
-                            background: 'transparent', 
-                            border: 'none', 
-                            color: '#AE2828', 
-                            cursor: 'pointer', 
-                            fontSize: '20px', 
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#AE2828',
+                            cursor: 'pointer',
+                            fontSize: '20px',
                             padding: '4px',
                             display: 'flex',
                             alignItems: 'center',
@@ -458,6 +462,7 @@ const Form = () => {
                                 <span className="ff-hod-meta">
                                   {hod.department} • Unit: {hod.unit || "N/A"}
                                 </span>
+                                <span>{hod.scale} • {hod.designation}</span>
                               </div>
                               <span className="ff-hod-scale-badge">{hod.scale}</span>
                             </li>
