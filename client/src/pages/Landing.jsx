@@ -12,7 +12,7 @@ const Landing = () => {
 
         <img src={logo} alt="NALCO logo" className="logo-circle" />
 
-        <h1 className="welcome-text">Welcome to NALCO <em>External Storage Media Access Portal</em></h1>
+        <h1 className="welcome-text">External Storage Media Access Portal</h1>
 
         <p className="beta-text">Beta Version</p>
       </div>

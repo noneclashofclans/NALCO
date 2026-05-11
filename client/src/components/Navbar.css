@@ -1,12 +1,5 @@
-/* ═══════════════════════════════════════════════════════════
-   Navbar.css — NALCO Brand Theme
-   Primary Red  : #AE2828  (Upsdell Red — NALCO logo)
-   Dark         : #1E1917  (Eerie Black — NALCO logo)
-   ═══════════════════════════════════════════════════════════ */
-
-/* ── Navbar Shell ───────────────────────────────────────── */
 .navbar {
-  width: 100%;
+  width: 100vw;
   background: #1E1917;
   border-bottom: 3px solid #AE2828;
   position: sticky;
@@ -17,7 +10,7 @@
 
 /* ── Top Container ──────────────────────────────────────── */
 .navbar-container {
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 0 24px;
   height: 64px;
@@ -39,6 +32,7 @@
   width: auto;
   object-fit: contain;
   display: block;
+  margin-right: 100px;
 }
 
 /* ── Desktop Nav ────────────────────────────────────────── */

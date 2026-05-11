@@ -747,3 +747,88 @@
   color: #1E1917;
   border: 1px solid #DDD0CE;
 }
+
+/* Newwwwwwww */
+.top-action-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.small-btn {
+  padding: 10px 24px;
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  transition: 0.2s ease;
+  font-weight: 500;
+  background: #faff65;
+  border-radius: 6px;
+}
+
+.new{
+  padding: 10px 14px;
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #ff4a4ad2;
+  
+  border: 1px solid #EDE0DE;
+}
+
+.new:hover{
+  background: #AE2828;
+  color: white;
+}
+
+.accepted{
+  padding: 10px 14px;
+  background: #7deb98;
+  border-radius: 6px;
+  border: 1px solid #EDE0DE;
+}
+
+.accepted:hover{
+  background-color: #0eac00;
+  cursor: pointer;
+  color: white;
+}
+
+.filter-btn:hover {
+  background: #d6a81f;
+  color: white;
+}
+
+.recent{
+  cursor: pointer;
+  padding: 10px 14px;
+  background: #9ccff8;
+  border-radius: 6px;
+  border: 1px solid #EDE0DE;
+}
+
+.recent:hover{
+  background-color: #3ca7ff;
+  color: white;
+}
+
+.active-filter {
+  background: #AE2828;
+  color: white;
+}
+
+.rejectedBtn{
+  padding: 10px 14px;
+  background: #b656fb;
+  border-radius: 6px;
+  border: 1px solid #EDE0DE;
+  cursor: pointer;
+}
+
+.rejectedBtn:hover{
+  background-color: #5910c7;
+  color: white;
+}

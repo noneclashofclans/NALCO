@@ -27,13 +27,11 @@ const requestSchema = new mongoose.Schema({
   accessFrom:    { type: Date },
   accessTo:      { type: Date },
 
-  // ── Uploaded supporting documents ─────────────────────────
   documents: {
     type:    [documentSchema],
     default: [],
   },
 
-  // ── Approval workflow ──────────────────────────────────────
   status: {
     type: String,
     enum: ['pending-hod', 'pending-authority', 'pending-network', 'approved', 'rejected'],

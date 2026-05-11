@@ -4,6 +4,9 @@ import Navbar from "../components/Navbar";
 import "./Dashboard.css";
 import toast, { Toaster } from 'react-hot-toast';
 
+const NETWORK_HISTORY_KEY = "network_action_history";
+const MAX_HISTORY = 10;
+
 const Network = () => {
   const BASE_URL = 'http://localhost:3000';
   const navigate = useNavigate();
@@ -15,6 +18,34 @@ const Network = () => {
   const [myRequests, setMyRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [remarks, setRemarks] = useState("");
+  const [filterHistory, setFilterHistory] = useState("all");
+  const [historySeen, setHistorySeen] = useState(false);
+  const [actionHistory, setActionHistory] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(NETWORK_HISTORY_KEY) || "[]");
+    } catch {
+      return [];
+    }
+  });
+
+  const saveHistoryEntry = (req, actionType, networkRemarks) => {
+    const entry = {
+      id: req._id,
+      formNumber: req.formNumber || req._id.slice(-5),
+      employeeName: req.userId?.username || "Unknown",
+      employeeNumber: req.userId?.personalNumber || "",
+      requestType: req.requestType,
+      action: actionType,
+      remarks: networkRemarks || "",
+      timestamp: new Date().toISOString(),
+    };
+    setHistorySeen(false);
+    setActionHistory(prev => {
+      const updated = [entry, ...prev].slice(0, MAX_HISTORY);
+      localStorage.setItem(NETWORK_HISTORY_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   const fetchTeamRequests = async () => {
     try {
@@ -48,7 +79,7 @@ const Network = () => {
 
   const handleAction = async (actionType) => {
     if (!selectedRequest) return;
-    
+
     if (actionType === 'reject' && !remarks.trim()) {
       toast.error("Remarks are mandatory when rejecting a request.");
       return;
@@ -61,16 +92,17 @@ const Network = () => {
         body: JSON.stringify({
           action: actionType,
           remarks: remarks.trim(),
-          networkId: user._id || user.id 
+          networkId: user._id || user.id
         })
       });
       const data = await res.json();
       if (data.success) {
-        toast.success(`Request ${actionType}d successfully by Network Admin!`)
+        toast.success(`Request ${actionType}d successfully by Network Admin!`);
+        saveHistoryEntry(selectedRequest, actionType, remarks.trim());
         setSelectedRequest(null);
         setRemarks("");
-        fetchTeamRequests(); 
-        fetchMyRequests();    
+        fetchTeamRequests();
+        fetchMyRequests();
       } else {
         toast.error(data.message || "Action failed");
       }
@@ -80,16 +112,25 @@ const Network = () => {
     }
   };
 
+  const formatTimestamp = (iso) => {
+    const d = new Date(iso);
+    return {
+      date: d.toLocaleDateString(),
+      time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+  };
+
   const navItems = [
     { id: "team-approvals", icon: "◎", label: "Team Approvals" },
     { id: "my-requests", icon: "↗", label: "My History" },
+    { id: "action-history", icon: "🕐", label: "Action History" },
     { id: "new", icon: "+", label: "New Personal Request" }
   ];
 
   return (
     <div className="dashboard-container">
       <Navbar />
-      <Toaster position="top-right" />
+      <Toaster position="top-center" />
       <div className="dashboard-body">
         {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
         <button className="sidebar-toggle" onClick={() => setSidebarOpen((o) => !o)}>
@@ -109,6 +150,7 @@ const Network = () => {
                       else {
                         setActiveNav(item.id);
                         setSidebarOpen(false);
+                        if (item.id === "action-history") setHistorySeen(true);
                       }
                     }}
                   >
@@ -118,6 +160,11 @@ const Network = () => {
                       {item.id === "team-approvals" && teamRequests.length > 0 && (
                         <span style={{ marginLeft: 'auto', background: '#ef4444', color: 'white', padding: '2px 8px', borderRadius: '12px', fontSize: '11px' }}>
                           {teamRequests.length}
+                        </span>
+                      )}
+                      {item.id === "action-history" && actionHistory.length > 0 && !historySeen && (
+                        <span style={{ marginLeft: 'auto', background: '#6366f1', color: 'white', padding: '2px 8px', borderRadius: '12px', fontSize: '11px' }}>
+                          {actionHistory.length}
                         </span>
                       )}
                     </span>
@@ -137,6 +184,7 @@ const Network = () => {
               </div>
             </header>
 
+            {/* ── Team Approvals ── */}
             {activeNav === "team-approvals" && (
               <section className="db-section">
                 <div className="section-header"><h2>Pending Final Approvals</h2></div>
@@ -150,7 +198,6 @@ const Network = () => {
                           <th>Req ID</th>
                           <th>Employee</th>
                           <th>Type</th>
-                          {/* ADDED JUSTIFICATION COLUMN */}
                           <th>Justification</th>
                           <th>Date</th>
                           <th>Documents</th>
@@ -162,20 +209,16 @@ const Network = () => {
                           <tr key={req._id}>
                             <td className="req-id">#{req.formNumber || req._id.slice(-5)}</td>
                             <td>
-                              <strong>{req.userId?.username || "Unknown"}</strong><br/>
-                              <span style={{fontSize: '12px', color: '#64748b'}}>{req.userId?.personalNumber}</span>
+                              <strong>{req.userId?.username || "Unknown"}</strong><br />
+                              <span style={{ fontSize: '12px', color: '#64748b' }}>{req.userId?.personalNumber}</span>
                             </td>
                             <td>{req.requestType}</td>
-                            
-                            {/* ADDED JUSTIFICATION RENDER */}
                             <td className="justification-cell" title={req.justification || ""}>
-                              {req.justification ? (
-                                req.justification.length > 25 ? req.justification.slice(0, 25) + '...' : req.justification
-                              ) : "—"}
+                              {req.justification
+                                ? (req.justification.length > 25 ? req.justification.slice(0, 25) + '...' : req.justification)
+                                : "—"}
                             </td>
-
                             <td>{new Date(req.requestDate).toLocaleDateString()}</td>
-                            
                             <td className="documents-cell">
                               {req.documents && req.documents.length > 0 ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -193,14 +236,11 @@ const Network = () => {
                                     </a>
                                   ))}
                                 </div>
-                              ) : (
-                                "—"
-                              )}
+                              ) : "—"}
                             </td>
-
                             <td>
-                              <button 
-                                className="primary-btn" 
+                              <button
+                                className="primary-btn"
                                 style={{ padding: '6px 12px', fontSize: '12px' }}
                                 onClick={() => setSelectedRequest(req)}
                               >
@@ -216,6 +256,7 @@ const Network = () => {
               </section>
             )}
 
+            {/* ── My Requests ── */}
             {activeNav === "my-requests" && (
               <section className="db-section">
                 <div className="section-header"><h2>My Personal Requests</h2></div>
@@ -237,7 +278,6 @@ const Network = () => {
                           <tr key={req._id}>
                             <td className="req-id">#{req.formNumber}</td>
                             <td>{req.requestType}</td>
-                            
                             <td className="documents-cell">
                               {req.documents && req.documents.length > 0 ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -255,11 +295,8 @@ const Network = () => {
                                     </a>
                                   ))}
                                 </div>
-                              ) : (
-                                "—"
-                              )}
+                              ) : "—"}
                             </td>
-
                             <td><span className="badge badge--blue">{req.status}</span></td>
                           </tr>
                         ))}
@@ -269,18 +306,137 @@ const Network = () => {
                 )}
               </section>
             )}
+
+            {/* ── Action History ── */}
+            {activeNav === "action-history" && (
+              <section className="db-section">
+                <div className="section-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <h2>Action History</h2>
+                  {actionHistory.length > 0 && (
+                    <button
+                      className="ff-btn ff-btn--secondary"
+                      style={{ fontSize: '12px', padding: '4px 12px' }}
+                      onClick={() => {
+                        if (window.confirm("Clear all action history?")) {
+                          setActionHistory([]);
+                          setFilterHistory("all");
+                          localStorage.removeItem(NETWORK_HISTORY_KEY);
+                        }
+                      }}
+                    >
+                      Clear history
+                    </button>
+                  )}
+                </div>
+
+                {actionHistory.length > 0 && (
+                  <div className="top-action-buttons" style={{ marginBottom: '16px' }}>
+                    <button
+                      className={`small-btn filter-btn ${filterHistory === "all" ? "active-filter" : ""}`}
+                      onClick={() => setFilterHistory("all")}
+                    >
+                      All
+                    </button>
+                    <button
+                      className={`accepted ${filterHistory === "approved" ? "active-filter" : ""}`}
+                      onClick={() => setFilterHistory("approved")}
+                    >
+                      Accepted
+                    </button>
+                    <button
+                      className={`rejectedBtn ${filterHistory === "rejected" ? "active-filter" : ""}`}
+                      onClick={() => setFilterHistory("rejected")}
+                    >
+                      Rejected
+                    </button>
+                  </div>
+                )}
+
+                {(() => {
+                  const filtered = actionHistory.filter(entry => {
+                    if (filterHistory === "all") return true;
+                    if (filterHistory === "approved") return entry.action === "approve";
+                    if (filterHistory === "rejected") return entry.action === "reject";
+                    return true;
+                  });
+
+                  return filtered.length === 0 ? (
+                    <div className="empty-state">
+                      <p>
+                        {actionHistory.length === 0
+                          ? "No actions taken yet. Approved or rejected requests will appear here."
+                          : `No ${filterHistory} actions found.`}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="requests-table-wrap">
+                      <table className="requests-table">
+                        <thead>
+                          <tr>
+                            <th>Req ID</th>
+                            <th>Employee</th>
+                            <th>Type</th>
+                            <th>Action</th>
+                            <th>Remarks</th>
+                            <th>Time</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filtered.map((entry, idx) => {
+                            const { date, time } = formatTimestamp(entry.timestamp);
+                            return (
+                              <tr key={idx}>
+                                <td className="req-id">#{entry.formNumber}</td>
+                                <td>
+                                  <strong>{entry.employeeName}</strong>
+                                  {entry.employeeNumber && (
+                                    <><br /><span style={{ fontSize: '12px', color: '#64748b' }}>{entry.employeeNumber}</span></>
+                                  )}
+                                </td>
+                                <td>{entry.requestType}</td>
+                                <td>
+                                  <span style={{
+                                    display: 'inline-block',
+                                    padding: '2px 10px',
+                                    borderRadius: '12px',
+                                    fontSize: '11px',
+                                    fontWeight: '500',
+                                    background: entry.action === 'approve' ? '#d1fae5' : '#fee2e2',
+                                    color: entry.action === 'approve' ? '#065f46' : '#991b1b',
+                                  }}>
+                                    {entry.action === 'approve' ? 'Approved' : 'Rejected'}
+                                  </span>
+                                </td>
+                                <td style={{ fontSize: '12px', color: '#64748b', fontStyle: entry.remarks ? 'normal' : 'italic' }}>
+                                  {entry.remarks || "—"}
+                                </td>
+                                <td style={{ fontSize: '12px' }}>
+                                  {date}<br />
+                                  <span style={{ color: '#64748b' }}>{time}</span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
+              </section>
+            )}
+
           </div>
         </main>
       </div>
 
+      {/* ── Review Modal ── */}
       {selectedRequest && (
         <div className="hod-modal-overlay">
           <div className="hod-modal">
             <h3>Final Review – Network Approval</h3>
             <p><strong>Employee:</strong> {selectedRequest.userId?.username || "Unknown"}</p>
             <p><strong>Type:</strong> {selectedRequest.requestType}</p>
-            
-            {/* ADDED JUSTIFICATION TO MODAL */}
+
             <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
               <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#64748b' }}><strong>Justification:</strong></p>
               <p style={{ margin: 0, fontSize: '14px', color: '#0f172a', whiteSpace: 'pre-wrap' }}>
@@ -314,15 +470,16 @@ const Network = () => {
               <label style={{ display: 'block', fontSize: '13px', marginBottom: '8px', fontWeight: '600' }}>
                 Network Authority Remarks {remarks ? '' : '(required if rejecting)'}
               </label>
-              <textarea 
-                rows="3" 
-                className="ff-input" 
-                style={{ width: '100%', resize: 'none' }} 
-                placeholder="Add any comments here..." 
-                value={remarks} 
-                onChange={(e) => setRemarks(e.target.value)} 
+              <textarea
+                rows="3"
+                className="ff-input"
+                style={{ width: '100%', resize: 'none' }}
+                placeholder="Add any comments here..."
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
               />
             </div>
+
             <div style={{ display: 'flex', gap: '10px', marginTop: '24px', justifyContent: 'flex-end' }}>
               <button className="ff-btn ff-btn--secondary" onClick={() => setSelectedRequest(null)}>Cancel</button>
               <button className="ff-btn" style={{ background: '#ef4444', color: 'white' }} onClick={() => handleAction('reject')}>Reject</button>

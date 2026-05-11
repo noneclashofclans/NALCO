@@ -8,14 +8,12 @@ const mongoose = require('mongoose');
 const Request  = require('../models/Request');
 const User = require('../models/User'); 
 
-// ── Upload directory setup ───────────────────────────────────
 
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'documents');
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
 
-// ── Multer — PDF only ────────────────────────────────────────
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
@@ -331,6 +329,7 @@ router.get('/hods', async (req, res) => {
   }
 });
 
+
 router.get('/receipt/:id', async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -340,9 +339,9 @@ router.get('/receipt/:id', async (req, res) => {
     const request = await Request
       .findById(req.params.id)
       .populate('userId', 'username personalNumber')
-      .populate('hodApprovedBy', 'username')
-      .populate('authorityApprovedBy', 'username')
-      .populate('networkApprovedBy', 'username');
+      .populate('hodApprovedBy', 'username scale')
+      .populate('authorityApprovedBy', 'username scale')
+      .populate('networkApprovedBy', 'username scale');
 
     if (!request) {
       return res.status(404).json({ success: false, message: 'Request not found.' });
