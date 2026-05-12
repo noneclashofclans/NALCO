@@ -751,10 +751,13 @@
 /* Newwwwwwww */
 .top-action-buttons {
   display: flex;
-  gap: 10px;
+  gap: 120px;
   align-items: center;
   flex-wrap: wrap;
   margin-bottom: 18px;
+  box-shadow: 0 4px 14px rgba(255, 163, 135, 0.997);
+  padding: 10px 20px;
+  border-radius: 40px;
 }
 
 .small-btn {
@@ -775,7 +778,6 @@
   border-radius: 6px;
   cursor: pointer;
   background: #ff4a4ad2;
-  
   border: 1px solid #EDE0DE;
 }
 
@@ -821,8 +823,8 @@
 }
 
 .rejectedBtn{
-  padding: 10px 14px;
-  background: #b656fb;
+  padding: 10px 32px;
+  background: #ff8eec;
   border-radius: 6px;
   border: 1px solid #EDE0DE;
   cursor: pointer;
