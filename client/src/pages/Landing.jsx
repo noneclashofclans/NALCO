@@ -14,7 +14,6 @@ const Landing = () => {
 
         <h1 className="welcome-text">External Storage Media Access Portal</h1>
 
-        <p className="beta-text">Beta Version</p>
       </div>
     </div>
   )
