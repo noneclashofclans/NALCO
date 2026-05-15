@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import "./Form.css";
+import { sendHodNotificationEmail } from "../utils/emailService";
 
 const generateFormNumber = () => {
   const ts = Date.now().toString(36).toUpperCase();
@@ -31,7 +32,6 @@ const Form = () => {
   const [accessFrom, setAccessFrom] = useState("");
   const [accessTo, setAccessTo] = useState("");
 
-  // HOD state
   const [hods, setHods] = useState([]);
   const [hodsLoading, setHodsLoading] = useState(true);
   const [hodsError, setHodsError] = useState("");
@@ -60,9 +60,7 @@ const Form = () => {
         const dept = encodeURIComponent(user?.department || "");
         const token = localStorage.getItem("token");
         const res = await fetch(`${BASE_URL}/api/requests/hods?department=${dept}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error("Failed to load HODs");
         const data = await res.json();
@@ -76,7 +74,6 @@ const Form = () => {
     fetchHods();
   }, [user?.department]);
 
-  /* ── Close HOD dropdown on outside click or Escape key ── */
   useEffect(() => {
     const handleClick = (e) => {
       if (hodDropdownRef.current && !hodDropdownRef.current.contains(e.target)) {
@@ -84,11 +81,8 @@ const Form = () => {
       }
     };
     const handleKeydown = (e) => {
-      if (e.key === "Escape") {
-        setHodDropdownOpen(false);
-      }
+      if (e.key === "Escape") setHodDropdownOpen(false);
     };
-
     document.addEventListener("mousedown", handleClick);
     document.addEventListener("keydown", handleKeydown);
     return () => {
@@ -97,7 +91,6 @@ const Form = () => {
     };
   }, []);
 
-  /* ── Filtered HODs by search ── */
   const filteredHods = hods.filter((h) => {
     const q = hodSearch.toLowerCase();
     return (
@@ -117,7 +110,6 @@ const Form = () => {
     setHodSearch("");
   };
 
-  /* ── File handlers ── */
   const validateFiles = (files) => {
     const errors = [];
     const valid = [];
@@ -159,7 +151,6 @@ const Form = () => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  /* ── Submit ── */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -195,7 +186,26 @@ const Form = () => {
       });
 
       const data = await response.json();
+
       if (response.ok) {
+        try {
+          if (selectedHod?.email) {
+            await sendHodNotificationEmail({
+              hodEmail:       selectedHod.email,
+              hodName:        selectedHod.username,
+              employeeName:   user?.username       || "",
+              employeeNumber: user?.personalNumber || "",
+              department:     user?.department     || "",
+              requestType:    "External Media Access",
+              justification:  justification,
+              formNumber:     formNumber,
+              submittedDate:  new Date().toLocaleString(),
+            });
+          }
+        } catch (emailErr) {
+          console.error("HOD email notification failed:", emailErr);
+        }
+
         setSubmitted(true);
       } else {
         alert(`Failed to submit: ${data.message}`);
@@ -206,7 +216,6 @@ const Form = () => {
     }
   };
 
-  /* ── Success screen ── */
   if (submitted) {
     return (
       <div className="ff-container">
@@ -236,7 +245,6 @@ const Form = () => {
     );
   }
 
-  /* ── Main render ── */
   return (
     <div className="ff-container">
       <Navbar />
@@ -244,7 +252,6 @@ const Form = () => {
       <main className="ff-content">
         <div className="ff-page">
 
-          {/* ── Page Header ── */}
           <div className="ff-page-header">
             <h1 className="ff-page-title">External Media Access Request</h1>
             <div className="ff-meta-bar">
@@ -274,7 +281,6 @@ const Form = () => {
 
           <form className="ff-form" onSubmit={handleSubmit}>
 
-            {/* ── Employee Details ── */}
             <div className="ff-section">
               <h3 className="ff-section-title">Employee Details</h3>
               <div className="ff-fields-grid">
@@ -306,7 +312,6 @@ const Form = () => {
               </div>
             </div>
 
-            {/* ── HOD Selection ── */}
             <div className="ff-section">
               <h3 className="ff-section-title">Approval Authority</h3>
               <p className="ff-section-desc">
@@ -331,47 +336,33 @@ const Form = () => {
                     Select HOD <span className="ff-required">*</span>
                   </label>
 
-                  {/* Trigger / selected display */}
                   <div
                     className={!selectedHod ? `ff-hod-trigger ${hodDropdownOpen ? "ff-hod-trigger--open" : ""}` : ""}
-                    onClick={() => {
-                      if (!selectedHod) setHodDropdownOpen((v) => !v);
-                    }}
+                    onClick={() => { if (!selectedHod) setHodDropdownOpen((v) => !v); }}
                     role={!selectedHod ? "button" : undefined}
                     tabIndex={!selectedHod ? 0 : undefined}
                     onKeyDown={(e) => e.key === "Enter" && !selectedHod && setHodDropdownOpen((v) => !v)}
                   >
                     {selectedHod ? (
-                      /* ── NEW STYLED SELECTED BOX ── */
                       <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        width: '100%',
-                        background: '#FDF0F0', /* Light red tint */
-                        border: '1.5px solid #E8A49B', /* Red border */
-                        padding: '12px 16px',
-                        borderRadius: '8px',
-                        boxShadow: '0 2px 8px rgba(174, 40, 40, 0.05)'
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        width: '100%', background: '#FDF0F0', border: '1.5px solid #E8A49B',
+                        padding: '12px 16px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(174, 40, 40, 0.05)'
                       }}>
                         <div className="ff-hod-selected-info" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                           <div className="ff-hod-avatar" style={{
-                            background: '#AE2828',
-                            color: 'white',
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 'bold',
-                            fontSize: '18px'
+                            background: '#AE2828', color: 'white', width: '40px', height: '40px',
+                            borderRadius: '50%', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', fontWeight: 'bold', fontSize: '18px'
                           }}>
                             {selectedHod.username.charAt(0).toUpperCase()}
                           </div>
                           <div className="ff-hod-selected-text" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                             <span className="ff-hod-name" style={{ fontWeight: '700', color: '#1E1917', fontSize: '15px' }}>
-                              {selectedHod.username} <span style={{ fontSize: '12px', background: '#FFFFFF', padding: '2px 6px', borderRadius: '4px', border: '1px solid #E8A49B', color: '#AE2828', marginLeft: '6px' }}>{selectedHod.scale}</span>
+                              {selectedHod.username}
+                              <span style={{ fontSize: '12px', background: '#FFFFFF', padding: '2px 6px', borderRadius: '4px', border: '1px solid #E8A49B', color: '#AE2828', marginLeft: '6px' }}>
+                                {selectedHod.scale}
+                              </span>
                             </span>
                             <span className="ff-hod-meta" style={{ fontSize: '13px', color: '#9A7070' }}>
                               {selectedHod.department} Department
@@ -382,15 +373,9 @@ const Form = () => {
                           type="button"
                           className="ff-hod-clear"
                           style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#AE2828',
-                            cursor: 'pointer',
-                            fontSize: '20px',
-                            padding: '4px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
+                            background: 'transparent', border: 'none', color: '#AE2828',
+                            cursor: 'pointer', fontSize: '20px', padding: '4px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
                             transition: 'transform 0.15s ease'
                           }}
                           onMouseEnter={(e) => e.target.style.transform = 'scale(1.2)'}
@@ -403,23 +388,15 @@ const Form = () => {
                         </button>
                       </div>
                     ) : (
-                      <>
-                        <div className="ff-hod-select-box">
-                          <span className="ff-hod-placeholder">
-                            Select a HOD…
-                          </span>
-                          <span className="ff-hod-arrow">
-                            {hodDropdownOpen ? "▲" : "▼"}
-                          </span>
-                        </div>
-                      </>
+                      <div className="ff-hod-select-box">
+                        <span className="ff-hod-placeholder">Select a HOD…</span>
+                        <span className="ff-hod-arrow">{hodDropdownOpen ? "▲" : "▼"}</span>
+                      </div>
                     )}
                   </div>
 
-                  {/* Enhanced Dropdown panel */}
                   {hodDropdownOpen && !selectedHod && (
                     <div className="ff-hod-dropdown" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {/* Search input header */}
                       <div className="ff-hod-search-wrap" style={{ padding: '8px 8px 0' }}>
                         <span className="ff-hod-search-icon">🔍</span>
                         <input
@@ -440,7 +417,6 @@ const Form = () => {
                         )}
                       </div>
 
-                      {/* HOD list */}
                       <ul className="ff-hod-list">
                         {filteredHods.length === 0 ? (
                           <li className="ff-hod-no-results" style={{ textAlign: 'center', padding: '24px 12px' }}>
@@ -449,19 +425,13 @@ const Form = () => {
                           </li>
                         ) : (
                           filteredHods.map((hod) => (
-                            <li
-                              key={hod._id}
-                              className="ff-hod-option"
-                              onClick={() => selectHod(hod)}
-                            >
+                            <li key={hod._id} className="ff-hod-option" onClick={() => selectHod(hod)}>
                               <div className="ff-hod-avatar ff-hod-avatar--sm">
                                 {hod.username.charAt(0).toUpperCase()}
                               </div>
                               <div className="ff-hod-option-text">
                                 <span className="ff-hod-name">{hod.username}</span>
-                                <span className="ff-hod-meta">
-                                  {hod.department} • Unit: {hod.unit || "N/A"}
-                                </span>
+                                <span className="ff-hod-meta">{hod.department} • Unit: {hod.unit || "N/A"}</span>
                                 <span>{hod.scale} • {hod.designation}</span>
                               </div>
                               <span className="ff-hod-scale-badge">{hod.scale}</span>
@@ -470,8 +440,11 @@ const Form = () => {
                         )}
                       </ul>
 
-                      {/* Dropdown Footer */}
-                      <div className="ff-hod-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderTop: '1px solid #EDE0DE', background: '#FDFAF9', fontSize: '12px', color: '#9A7070', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px' }}>
+                      <div className="ff-hod-footer" style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        padding: '10px 14px', borderTop: '1px solid #EDE0DE', background: '#FDFAF9',
+                        fontSize: '12px', color: '#9A7070', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px'
+                      }}>
                         <span><strong>{filteredHods.length}</strong> available</span>
                         <span style={{ cursor: 'pointer', fontWeight: '600', color: '#AE2828' }} onClick={() => setHodDropdownOpen(false)}>Close</span>
                       </div>
@@ -481,7 +454,6 @@ const Form = () => {
               )}
             </div>
 
-            {/* ── Access Period ── */}
             <div className="ff-section">
               <h3 className="ff-section-title">Access Period</h3>
               <div className="ff-fields-grid">
@@ -510,7 +482,6 @@ const Form = () => {
               </div>
             </div>
 
-            {/* ── Justification ── */}
             <div className="ff-section">
               <h3 className="ff-section-title">Justification</h3>
               <div className="ff-field">
@@ -530,7 +501,6 @@ const Form = () => {
               </div>
             </div>
 
-            {/* ── Document Upload ── */}
             <div className="ff-section">
               <h3 className="ff-section-title">Supporting Documents</h3>
               <p className="ff-section-desc">
@@ -577,7 +547,6 @@ const Form = () => {
               )}
             </div>
 
-            {/* ── Declaration ── */}
             <div className={`ff-declaration ${shake ? "ff-shake" : ""}`}>
               <label className="ff-checkbox-label">
                 <input type="checkbox" className="ff-checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
