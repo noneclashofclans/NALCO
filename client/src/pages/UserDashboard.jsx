@@ -41,7 +41,7 @@ const savePersistedNotifications = (notifications) => {
 
 const UserDashboard = () => {
   const navigate = useNavigate();
-  const BASE_URL = 'http://localhost:3000';
+  const BASE_URL = 'https://nalco.onrender.com';
 
   const userRef = useRef(JSON.parse(localStorage.getItem("user") || "{}"));
   const user = userRef.current;
