@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import "./Form.css";
-import { sendHodNotificationEmail } from "../utils/emailService";
 
 const generateFormNumber = () => {
   const ts = Date.now().toString(36).toUpperCase();
@@ -152,69 +151,51 @@ const Form = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!agreed) {
-      setShake(true);
-      setTimeout(() => setShake(false), 500);
-      return;
+  if (!agreed) {
+    setShake(true);
+    setTimeout(() => setShake(false), 500);
+    return;
+  }
+  if (dateRangeError) return;
+  if (!selectedHod) {
+    alert("Please select a Head of Department before submitting.");
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append("userId", user._id || user.id);
+    formData.append("hodId", selectedHod._id);
+    formData.append("department", user.department);
+    formData.append("designation", designation);
+    formData.append("formNumber", formNumber);
+    formData.append("serialNo", serialNo);
+    formData.append("date", date);
+    formData.append("requestType", "External Media Access");
+    formData.append("justification", justification);
+    formData.append("accessFrom", accessFrom);
+    formData.append("accessTo", accessTo);
+    uploadedFiles.forEach((file) => formData.append("documents", file));
+
+    const response = await fetch(`${BASE_URL}/api/requests/submit`, {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      setSubmitted(true);
+    } else {
+      alert(`Failed to submit: ${data.message}`);
     }
-    if (dateRangeError) return;
-    if (!selectedHod) {
-      alert("Please select a Head of Department before submitting.");
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append("userId", user._id || user.id);
-      formData.append("hodId", selectedHod._id);
-      formData.append("department", user.department);
-      formData.append("designation", designation);
-      formData.append("formNumber", formNumber);
-      formData.append("serialNo", serialNo);
-      formData.append("date", date);
-      formData.append("requestType", "External Media Access");
-      formData.append("justification", justification);
-      formData.append("accessFrom", accessFrom);
-      formData.append("accessTo", accessTo);
-      uploadedFiles.forEach((file) => formData.append("documents", file));
-
-      const response = await fetch(`${BASE_URL}/api/requests/submit`, {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        try {
-          if (selectedHod?.email) {
-            await sendHodNotificationEmail({
-              hodEmail:       selectedHod.email,
-              hodName:        selectedHod.username,
-              employeeName:   user?.username       || "",
-              employeeNumber: user?.personalNumber || "",
-              department:     user?.department     || "",
-              requestType:    "External Media Access",
-              justification:  justification,
-              formNumber:     formNumber,
-              submittedDate:  new Date().toLocaleString(),
-            });
-          }
-        } catch (emailErr) {
-          console.error("HOD email notification failed:", emailErr);
-        }
-
-        setSubmitted(true);
-      } else {
-        alert(`Failed to submit: ${data.message}`);
-      }
-    } catch (error) {
-      console.error("Submission error:", error);
-      alert("Error connecting to the server. Please try again later.");
-    }
-  };
+  } catch (error) {
+    console.error("Submission error:", error);
+    alert("Error connecting to the server. Please try again later.");
+  }
+};
 
   if (submitted) {
     return (

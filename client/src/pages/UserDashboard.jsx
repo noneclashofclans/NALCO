@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import "./Dashboard.css";
-import { sendHodNotificationEmail } from "../utils/emailService";
 
 const userFromStorage = JSON.parse(localStorage.getItem("user") || "{}");
 
