@@ -36,7 +36,7 @@ const showError = (msg) =>
 /* ── Component ─────────────────────────────────────────────── */
 
 const Login = () => {
-  const BASE_URL = 'http://localhost:3000';
+  const BASE_URL = 'https://nalco.onrender.com';
   const navigate = useNavigate();
 
   // Regular employee login

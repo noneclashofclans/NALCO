@@ -16,7 +16,7 @@ const MAX_FILE_SIZE_MB = 5;
 const MAX_FILES = 5;
 
 const Form = () => {
-  const BASE_URL = "http://localhost:3000";
+  const BASE_URL = "https://nalco.onrender.com";
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const fileInputRef = useRef(null);

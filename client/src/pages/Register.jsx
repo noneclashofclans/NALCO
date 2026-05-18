@@ -47,7 +47,7 @@ const showError = (msg) =>
 /* ── Component ─────────────────────────────────────────── */
 
 const Register = () => {
-  const BASE_URL = 'http://localhost:3000';
+  const BASE_URL = 'https://nalco.onrender.com';
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({

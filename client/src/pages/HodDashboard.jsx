@@ -8,7 +8,7 @@ const HOD_HISTORY_KEY = "hod_action_history";
 const MAX_HISTORY = 10;
 
 const HodDashboard = () => {
-  const BASE_URL = 'http://localhost:3000';
+  const BASE_URL = 'https://nalco.onrender.com';
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
